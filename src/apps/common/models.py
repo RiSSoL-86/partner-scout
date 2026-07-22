@@ -17,8 +17,8 @@ class UUIDAbstractModel(models.Model):
         abstract = True
 
 
-class TimeStampedAbstractModel(models.Model):
-    """Shortcut for adding up creation and update timestamps."""
+class TimestampedAbstractModel(models.Model):
+    """Add managed creation and update timestamps to inherited models."""
 
     created_timestamp = models.DateTimeField(
         _("created at"), auto_now_add=True, editable=False

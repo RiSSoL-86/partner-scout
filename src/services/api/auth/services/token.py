@@ -45,5 +45,5 @@ class TokenService(BaseService):
             extras={"type": token_type},
         ).encode(
             secret=settings.SECRET_KEY,
-            algorithm="HS256",
+            algorithm=settings.JWT_ALGORITHM,  # type: ignore[misc]
         )

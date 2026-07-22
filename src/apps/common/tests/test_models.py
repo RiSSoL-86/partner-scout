@@ -2,7 +2,7 @@ import uuid
 
 from django.db import models
 
-from apps.common.models import TimeStampedAbstractModel, UUIDAbstractModel
+from apps.common.models import TimestampedAbstractModel, UUIDAbstractModel
 
 
 def test_uuid_model_is_abstract() -> None:
@@ -18,10 +18,10 @@ def test_uuid_model_is_abstract() -> None:
 
 def test_timestamp_model_is_abstract() -> None:
     """Provide an abstract model with managed creation and update times."""
-    assert TimeStampedAbstractModel._meta.abstract is True
+    assert TimestampedAbstractModel._meta.abstract is True
 
-    created = TimeStampedAbstractModel._meta.get_field("created_timestamp")
-    updated = TimeStampedAbstractModel._meta.get_field("updated_timestamp")
+    created = TimestampedAbstractModel._meta.get_field("created_timestamp")
+    updated = TimestampedAbstractModel._meta.get_field("updated_timestamp")
 
     assert isinstance(created, models.DateTimeField)
     assert created.auto_now_add is True

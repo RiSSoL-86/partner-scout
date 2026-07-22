@@ -79,7 +79,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "last_name",
-                    models.CharField(max_length=80, verbose_name="lastname"),
+                    models.CharField(max_length=80, verbose_name="last name"),
                 ),
                 (
                     "groups",

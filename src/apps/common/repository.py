@@ -27,7 +27,7 @@ class BaseRepository[ModelT: models.Model, PrimaryKeyT]:
         if offset < 0:
             raise ValueError("offset must be greater than or equal to zero")
 
-        queryset = self.model.objects.all()  # type: ignore[attr-defined]
+        queryset = self.model.objects.order_by("pk")  # type: ignore[attr-defined]
         queryset = queryset[offset : offset + limit]
         return [instance async for instance in queryset]
 
