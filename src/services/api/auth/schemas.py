@@ -39,7 +39,7 @@ class TokenPairResponse(CamelCaseModel):
 
 @final
 class AuthResponse(TokenPairResponse):
-    """Return tokens after signin."""
+    """Return tokens after sign-in."""
 
 
 @final
@@ -51,4 +51,4 @@ class RefreshRequest(CamelCaseModel):
 
 @final
 class RefreshResponse(TokenPairResponse):
-    """Return a rotated JWT token pair."""
+    """Return a renewed JWT token pair."""

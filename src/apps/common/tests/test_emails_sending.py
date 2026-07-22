@@ -308,10 +308,10 @@ class SendEmailTestCase(SimpleTestCase):
 
     @patch("apps.common.services.emails_sending.render_to_string")
     @patch("apps.common.services.emails_sending.EmailMultiAlternatives")
-    def test_send_email_logging_on_exception(
+    def test_send_email_propagates_send_exception(
         self, mock_email_class, mock_render
     ):
-        """Test that exceptions during email sending are properly handled."""
+        """Propagate exceptions raised while sending an email."""
         # Arrange
         mock_render.side_effect = [
             "Subject",

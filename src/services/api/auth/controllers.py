@@ -117,7 +117,7 @@ class RefreshController(
 
     @override
     async def make_api_response(self) -> RefreshResponse:
-        """Return a rotated access and refresh token pair."""
+        """Return a renewed access and refresh token pair."""
         service = TokenService()
         email, access_token, refresh_token = await service.execute(
             user=self.request.user,
