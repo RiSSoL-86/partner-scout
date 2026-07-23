@@ -32,3 +32,18 @@ def test_company_name_is_unique_case_insensitively() -> None:
             name="EXAMPLE CONSULTING",
             website_url="https://other.example.com",
         )
+
+
+@pytest.mark.django_db
+def test_company_website_url_is_unique_case_insensitively() -> None:
+    """Reject company website URLs that differ only by letter casing."""
+    Company.objects.create(
+        name="Example Consulting",
+        website_url="https://example.com",
+    )
+
+    with pytest.raises(IntegrityError), transaction.atomic():
+        Company.objects.create(
+            name="Other Consulting",
+            website_url="HTTPS://EXAMPLE.COM",
+        )

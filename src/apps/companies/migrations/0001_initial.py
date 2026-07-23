@@ -27,7 +27,7 @@ class Migration(migrations.Migration):
             options={
                 'verbose_name': 'company',
                 'verbose_name_plural': 'companies',
-                'constraints': [models.UniqueConstraint(django.db.models.functions.text.Lower('name'), name='unique_company_name')],
+                'constraints': [models.UniqueConstraint(django.db.models.functions.text.Lower('name'), name='unique_company_name'), models.UniqueConstraint(django.db.models.functions.text.Lower('website_url'), name='unique_company_website_url')],
             },
         ),
     ]

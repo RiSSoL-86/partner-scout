@@ -5,6 +5,7 @@ from django.db.models.functions import Lower
 from django.utils.translation import gettext_lazy as _
 
 from apps.common.models import TimestampedAbstractModel, UUIDAbstractModel
+from apps.persons.choices import MentionType
 
 
 @final
@@ -38,3 +39,44 @@ class Person(UUIDAbstractModel, TimestampedAbstractModel):
     def __str__(self) -> str:
         """Return the normalized name."""
         return self.normalized_name
+
+
+@final
+class PersonMention(UUIDAbstractModel, TimestampedAbstractModel):
+    """Connect a person to a source where they were mentioned."""
+
+    person = models.ForeignKey(
+        "persons.Person",
+        on_delete=models.CASCADE,
+        related_name="source_mentions",
+        verbose_name=_("person"),
+    )
+    source = models.ForeignKey(
+        "sources.Source",
+        on_delete=models.CASCADE,
+        related_name="person_mentions",
+        verbose_name=_("source"),
+    )
+    mention_type = models.PositiveSmallIntegerField(
+        verbose_name=_("mention type"),
+        choices=MentionType.choices,
+        default=MentionType.OTHER,
+    )
+    context = models.TextField(verbose_name=_("context"))
+
+    class Meta:
+        """Configure person mention metadata."""
+
+        verbose_name = _("person mention")
+        verbose_name_plural = _("persons mentions")
+        constraints = [
+            models.UniqueConstraint(
+                fields=("person", "source"),
+                name="unique_person_source_mention",
+            ),
+        ]
+
+    @override
+    def __str__(self) -> str:
+        """Return the person and source link."""
+        return f"{self.person} in {self.source}"

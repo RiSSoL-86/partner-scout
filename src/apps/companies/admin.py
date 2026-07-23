@@ -1,14 +1,9 @@
-from __future__ import annotations
-
-from typing import TYPE_CHECKING, final, override
+from typing import final
 
 from django.contrib import admin
 
 from apps.companies.models import Company
 from apps.scans.models import Scan
-
-if TYPE_CHECKING:
-    from django.http import HttpRequest
 
 
 @final
@@ -30,15 +25,6 @@ class ScanInline(admin.TabularInline):  # type: ignore[type-arg]
     readonly_fields = fields
     show_change_link = True
 
-    @override
-    def has_add_permission(  # type: ignore[override]
-        self,
-        request: HttpRequest,
-        obj: object,
-    ) -> bool:
-        """Disable creating scans from the company inline."""
-        return False
-
 
 @final
 class CompanyAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
@@ -47,18 +33,15 @@ class CompanyAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
     list_display = (
         "id",
         "name",
-        "website_url",
         "scan_enabled",
         "last_scanned_at",
-        "created_timestamp",
-        "updated_timestamp",
     )
     list_display_links = ("id",)
-    list_filter = ("scan_enabled", "created_timestamp", "last_scanned_at")
+    list_filter = ("scan_enabled", "last_scanned_at")
     ordering = ("name",)
     inlines = (ScanInline,)
     readonly_fields = ("id", "created_timestamp", "updated_timestamp")
-    search_fields = ("name", "website_url")
+    search_fields = ("name",)
 
 
 admin.site.register(Company, CompanyAdmin)

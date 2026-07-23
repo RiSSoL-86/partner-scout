@@ -32,6 +32,10 @@ class Company(UUIDAbstractModel, TimestampedAbstractModel):
                 Lower("name"),
                 name="unique_company_name",
             ),
+            models.UniqueConstraint(
+                Lower("website_url"),
+                name="unique_company_website_url",
+            ),
         ]
 
     @override

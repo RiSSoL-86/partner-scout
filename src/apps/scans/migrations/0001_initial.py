@@ -11,6 +11,8 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('companies', '0001_initial'),
+        ('persons', '0001_initial'),
+        ('sources', '0001_initial'),
     ]
 
     operations = [
@@ -29,7 +31,46 @@ class Migration(migrations.Migration):
             options={
                 'verbose_name': 'scan',
                 'verbose_name_plural': 'scans',
+                'indexes': [models.Index(fields=['company', 'created_timestamp'], name='scan_company_created_idx'), models.Index(fields=['status', 'created_timestamp'], name='scan_status_created_idx')],
                 'constraints': [models.UniqueConstraint(condition=models.Q(('status__in', (0, 1))), fields=('company',), name='unique_active_scan_per_company')],
+            },
+        ),
+        migrations.CreateModel(
+            name='PersonSnapshot',
+            fields=[
+                ('id', models.UUIDField(default=uuid.uuid7, editable=False, primary_key=True, serialize=False, verbose_name='ID')),
+                ('created_timestamp', models.DateTimeField(auto_now_add=True, verbose_name='created at')),
+                ('updated_timestamp', models.DateTimeField(auto_now=True, verbose_name='updated at')),
+                ('position_type', models.PositiveSmallIntegerField(choices=[(0, 'partner'), (1, 'director'), (2, 'other')], default=2, verbose_name='position type')),
+                ('role_title', models.CharField(max_length=255, verbose_name='role title')),
+                ('organizational_unit', models.CharField(blank=True, default='', max_length=255, verbose_name='organizational unit')),
+                ('email', models.EmailField(blank=True, default='', max_length=254, verbose_name='email')),
+                ('phone', models.CharField(blank=True, default='', max_length=50, verbose_name='phone number')),
+                ('confirmation_level', models.PositiveSmallIntegerField(choices=[(0, 'confirmed'), (1, 'high'), (2, 'low')], default=2, verbose_name='confirmation level')),
+                ('person', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='snapshots', to='persons.person', verbose_name='person')),
+                ('scan', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='person_snapshots', to='scans.scan', verbose_name='scan')),
+                ('source', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='person_snapshots', to='sources.source', verbose_name='source')),
+            ],
+            options={
+                'verbose_name': 'person snapshot',
+                'verbose_name_plural': 'person snapshots',
+                'indexes': [models.Index(fields=['scan', 'position_type'], name='ps_scan_position_idx'), models.Index(fields=['person', 'created_timestamp'], name='ps_person_created_idx')],
+                'constraints': [models.UniqueConstraint(fields=('scan', 'person', 'role_title', 'organizational_unit'), name='unique_person_snapshot_role_per_scan')],
+            },
+        ),
+        migrations.CreateModel(
+            name='ScanSource',
+            fields=[
+                ('id', models.UUIDField(default=uuid.uuid7, editable=False, primary_key=True, serialize=False, verbose_name='ID')),
+                ('created_timestamp', models.DateTimeField(auto_now_add=True, verbose_name='created at')),
+                ('updated_timestamp', models.DateTimeField(auto_now=True, verbose_name='updated at')),
+                ('scan', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='source_links', to='scans.scan', verbose_name='scan')),
+                ('source', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='scan_links', to='sources.source', verbose_name='source')),
+            ],
+            options={
+                'verbose_name': 'scan source',
+                'verbose_name_plural': 'scan sources',
+                'constraints': [models.UniqueConstraint(fields=('scan', 'source'), name='unique_source_per_scan')],
             },
         ),
     ]
