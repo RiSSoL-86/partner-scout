@@ -33,3 +33,21 @@ services:
       driver: "json-file"
       options:
         max-size: "500m"
+
+  telegram:
+    build:
+      dockerfile: etc/docker/Dockerfile.dev
+      context: .
+    restart: always
+    command: python services/telegram/manage.py
+    env_file:
+      - ./src/.env
+    volumes:
+      - ./src/:/app/
+      - ./cdn/static/:/cdn/static/
+      - ./cdn/media/:/cdn/media/
+    network_mode: "host"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "500m"

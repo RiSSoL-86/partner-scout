@@ -18,7 +18,7 @@ class BaseRepository[ModelT: models.Model, PrimaryKeyT]:
 
     async def list(
         self,
-        limit: int = 100,
+        limit: int = 20,
         offset: int = 0,
     ) -> list[ModelT]:
         """Return a page of model instances."""

@@ -28,6 +28,9 @@ createsuperuser:
 run:
 	uv run uvicorn django_project.asgi:application --reload --app-dir src
 
+telegram:
+	uv run python src/services/telegram/manage.py
+
 lint:
 	uv run ruff format src/
 	uv run ruff check src/ --fix
