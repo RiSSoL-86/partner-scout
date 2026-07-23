@@ -8,5 +8,9 @@ INSTALLED_APPS = [
     # 3rd party apps
     "dmr",
     # project apps
+    "apps.companies.apps.CompaniesConfig",
+    "apps.persons.apps.PersonsConfig",
+    "apps.scans.apps.ScansConfig",
+    "apps.sources.apps.SourcesConfig",
     "apps.users.apps.UsersConfig",
 ]
