@@ -1,6 +1,7 @@
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, final
 
+from aiogram.types import WebAppInfo
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from services.telegram.handlers.companies.callbacks import (
@@ -92,6 +93,7 @@ class CompanyKeyboard:
         company_id: str,
         scan_index: int,
         scans_total: int,
+        report_url: str,
     ) -> InlineKeyboardMarkup:
         """Build the company scan navigation inline keyboard."""
         builder = InlineKeyboardBuilder()
@@ -131,6 +133,13 @@ class CompanyKeyboard:
                     company_id=company_id,
                     scan_index=scan_index,
                 ),
+            )
+            sizes.append(1)
+
+        if report_url.startswith("https://"):
+            builder.button(
+                text="Open report 🌐",
+                web_app=WebAppInfo(url=report_url),
             )
             sizes.append(1)
 

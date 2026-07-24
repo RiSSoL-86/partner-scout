@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING, final
 
+from aiogram.types import WebAppInfo
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from services.telegram.handlers.main.callbacks import MainCallback
@@ -22,6 +23,7 @@ class PersonMentionKeyboard:
         offset: int,
         page_size: int,
         total: int,
+        report_url: str,
     ) -> InlineKeyboardMarkup:
         """Build the person mentions pagination inline keyboard."""
         builder = InlineKeyboardBuilder()
@@ -46,6 +48,14 @@ class PersonMentionKeyboard:
             )
             nav_count += 1
 
+        report_row = 0
+        if report_url.startswith("https://"):
+            builder.button(
+                text="Open report 🌐",
+                web_app=WebAppInfo(url=report_url),
+            )
+            report_row = 1
+
         builder.button(
             text="Back ⬅️",
             callback_data=PersonCallback(action="menu"),
@@ -56,6 +66,8 @@ class PersonMentionKeyboard:
         )
 
         sizes = [nav_count] if nav_count else []
+        if report_row:
+            sizes.append(report_row)
         sizes.extend((1, 1))
         builder.adjust(*sizes)
         return builder.as_markup()

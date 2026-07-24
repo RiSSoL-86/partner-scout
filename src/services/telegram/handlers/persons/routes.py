@@ -6,6 +6,7 @@ from django.conf import settings
 
 from services.telegram.handlers.common.decorators import require_message
 from services.telegram.handlers.common.messaging import safe_edit_text
+from services.telegram.handlers.common.reports import build_report_url
 from services.telegram.handlers.main.callbacks import MainCallback
 from services.telegram.handlers.main.keyboards import MainKeyboard
 from services.telegram.handlers.main.views import MainView
@@ -163,6 +164,7 @@ async def show_person_mentions(
         offset=callback_data.offset,
         page_size=PAGE_SIZE,
         total=total,
+        report_url=build_report_url("persons", callback_data.person_id),
     )
     content = PersonMentionView.build_list_message(
         keyboard=keyboard,

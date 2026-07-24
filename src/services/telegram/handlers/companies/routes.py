@@ -6,6 +6,7 @@ from django.conf import settings
 
 from services.telegram.handlers.common.decorators import require_message
 from services.telegram.handlers.common.messaging import safe_edit_text
+from services.telegram.handlers.common.reports import build_report_url
 from services.telegram.handlers.companies.callbacks import (
     CompanyCallback,
     CompanyListCallback,
@@ -107,6 +108,7 @@ async def show_company_scan(
         company_id=callback_data.company_id,
         scan_index=scan_index,
         scans_total=scans_total,
+        report_url=build_report_url("companies", callback_data.company_id),
     )
     content = CompanyView.build_scan_message(
         keyboard=keyboard,
