@@ -2,11 +2,13 @@ from typing import TYPE_CHECKING
 from uuid import UUID
 
 from aiogram import F, Router
+from django.conf import settings
 
 from services.telegram.handlers.common.decorators import require_message
 from services.telegram.handlers.common.messaging import safe_edit_text
 from services.telegram.handlers.companies.callbacks import (
     CompanyCallback,
+    CompanyListCallback,
     PersonSnapshotCallback,
     ScanCallback,
 )
@@ -36,7 +38,7 @@ from services.telegram.handlers.main.views import MainView
 if TYPE_CHECKING:
     from aiogram.types import CallbackQuery, Message
 
-SNAPSHOTS_PAGE_SIZE = 5
+PAGE_SIZE: int = settings.TELEGRAM_PAGE_SIZE  # type: ignore[misc]
 
 router = Router(name="companies")
 
@@ -54,22 +56,31 @@ async def show_companies_menu(
     await callback_query.answer()
 
 
-@router.callback_query(CompanyCallback.filter(F.action == "list"))
+@router.callback_query(CompanyListCallback.filter())
 @require_message
 async def show_companies_list(
     callback_query: CallbackQuery,
     message: Message,
+    callback_data: CompanyListCallback,
 ) -> None:
-    """Show the companies list from the database."""
+    """Show a page of the companies list from the database."""
     service = CompanyListTelegramService()
-    companies = await service.execute()
+    companies, total = await service.execute(
+        offset=callback_data.offset,
+        limit=PAGE_SIZE,
+    )
 
     keyboard = CompanyKeyboard.build_list_keyboard(
         companies=companies,
+        offset=callback_data.offset,
+        page_size=PAGE_SIZE,
+        total=total,
     )
     content = CompanyView.build_list_message(
         keyboard=keyboard,
         companies=companies,
+        offset=callback_data.offset,
+        total=total,
     )
     await safe_edit_text(message, **content)
     await callback_query.answer()
@@ -110,7 +121,7 @@ async def show_company_scan(
 
 @router.callback_query(PersonSnapshotCallback.filter())
 @require_message
-async def show_scan_snapshots(
+async def show_scan_person_snapshots(
     callback_query: CallbackQuery,
     message: Message,
     callback_data: PersonSnapshotCallback,
@@ -121,7 +132,7 @@ async def show_scan_snapshots(
         company_id=UUID(callback_data.company_id),
         scan_index=callback_data.scan_index,
         offset=callback_data.offset,
-        limit=SNAPSHOTS_PAGE_SIZE,
+        limit=PAGE_SIZE,
     )
     if scan is None:
         await callback_query.answer("Scan not found")
@@ -131,7 +142,7 @@ async def show_scan_snapshots(
         company_id=callback_data.company_id,
         scan_index=scan_index,
         offset=callback_data.offset,
-        page_size=SNAPSHOTS_PAGE_SIZE,
+        page_size=PAGE_SIZE,
         total=snapshots_total,
     )
     content = PersonSnapshotView.build_list_message(

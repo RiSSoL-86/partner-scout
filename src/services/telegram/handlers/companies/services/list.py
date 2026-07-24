@@ -14,6 +14,14 @@ class CompanyListTelegramService(BaseTelegramService):
     company_repository = CompanyRepository()
 
     @override
-    async def execute(self) -> list[Company]:
-        """Return a page of companies."""
-        return await self.company_repository.list()
+    async def execute(
+        self,
+        offset: int = 0,
+        limit: int = 5,
+    ) -> tuple[list[Company], int]:
+        """Return a page of companies and their total."""
+        return await self.company_repository.list(
+            order_by=["name"],
+            offset=offset,
+            limit=limit,
+        )

@@ -6,7 +6,13 @@ from aiogram.filters.callback_data import CallbackData
 class CompanyCallback(CallbackData, prefix="companies"):
     """Represent navigation payloads inside the companies section."""
 
-    action: Literal["list", "back"]
+    action: Literal["back"]
+
+
+class CompanyListCallback(CallbackData, prefix="company_list"):
+    """Represent navigation payloads for the companies list page."""
+
+    offset: int = 0
 
 
 class ScanCallback(CallbackData, prefix="scans"):

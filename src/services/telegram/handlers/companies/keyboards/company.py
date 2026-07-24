@@ -5,6 +5,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from services.telegram.handlers.companies.callbacks import (
     CompanyCallback,
+    CompanyListCallback,
     PersonSnapshotCallback,
     ScanCallback,
 )
@@ -26,7 +27,7 @@ class CompanyKeyboard:
         builder = InlineKeyboardBuilder()
         builder.button(
             text="Companies list 📈",
-            callback_data=CompanyCallback(action="list"),
+            callback_data=CompanyListCallback(),
         )
         builder.button(
             text="Back ⬅️",
@@ -42,6 +43,9 @@ class CompanyKeyboard:
     @staticmethod
     def build_list_keyboard(
         companies: Sequence[Company],
+        offset: int,
+        page_size: int,
+        total: int,
     ) -> InlineKeyboardMarkup:
         """Build the companies list actions inline keyboard."""
         builder = InlineKeyboardBuilder()
@@ -51,6 +55,22 @@ class CompanyKeyboard:
                 callback_data=ScanCallback(company_id=str(company.id)),
             )
 
+        nav_count = 0
+        if offset > 0:
+            builder.button(
+                text="⬅️ Previous",
+                callback_data=CompanyListCallback(
+                    offset=max(offset - page_size, 0),
+                ),
+            )
+            nav_count += 1
+        if offset + page_size < total:
+            builder.button(
+                text="Next ➡️",
+                callback_data=CompanyListCallback(offset=offset + page_size),
+            )
+            nav_count += 1
+
         builder.button(
             text="Back ⬅️",
             callback_data=CompanyCallback(action="back"),
@@ -59,7 +79,12 @@ class CompanyKeyboard:
             text="Exit ❌",
             callback_data=MainCallback(section="close"),
         )
-        builder.adjust(1)
+
+        sizes = [1] * len(companies)
+        if nav_count:
+            sizes.append(nav_count)
+        sizes.extend((1, 1))
+        builder.adjust(*sizes)
         return builder.as_markup()
 
     @staticmethod
@@ -111,7 +136,7 @@ class CompanyKeyboard:
 
         builder.button(
             text="Back ⬅️",
-            callback_data=CompanyCallback(action="list"),
+            callback_data=CompanyListCallback(),
         )
         builder.button(
             text="Exit ❌",

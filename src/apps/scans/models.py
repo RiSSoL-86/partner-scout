@@ -166,12 +166,8 @@ class PersonSnapshot(UUIDAbstractModel, TimestampedAbstractModel):
         ]
         indexes = [
             models.Index(
-                fields=("scan", "position_type"),
-                name="ps_scan_position_idx",
-            ),
-            models.Index(
-                fields=("person", "created_timestamp"),
-                name="ps_person_created_idx",
+                fields=("scan", "created_timestamp"),
+                name="snapshot_scan_created_idx",
             ),
         ]
 

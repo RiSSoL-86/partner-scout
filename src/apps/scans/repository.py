@@ -60,7 +60,7 @@ class PersonSnapshotRepository(BaseRepository[PersonSnapshot, UUID]):
         """Return a page of person snapshots for a scan and their total."""
         queryset = self.model.objects.filter(scan_id=scan_id)
         total = await queryset.acount()
-        ordered = queryset.select_related("person").order_by(
+        ordered = queryset.select_related("person", "source").order_by(
             "created_timestamp",
         )
         page = [

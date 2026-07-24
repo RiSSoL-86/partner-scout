@@ -4,7 +4,6 @@ from aiogram.utils.formatting import (
     Text,
     as_line,
     as_list,
-    as_numbered_section,
 )
 
 if TYPE_CHECKING:
@@ -32,14 +31,17 @@ class CompanyView:
     def build_list_message(
         keyboard: InlineKeyboardMarkup,
         companies: list[Company],
+        offset: int,
+        total: int,
     ) -> dict[str, Any]:
         """Build kwargs for displaying the companies list."""
         if companies:
-            content = as_numbered_section(
-                "Companies 📊:",
+            last = offset + len(companies)
+            content = as_list(
+                as_line(f"Companies {offset + 1}-{last}/{total} 📊:"),
                 *(
                     as_list(
-                        as_line("", company.name),
+                        as_line(f"{offset + index}. ", company.name),
                         as_line("ID: ", company.id),
                         as_line("Website: ", company.website_url),
                         as_line(
@@ -58,7 +60,7 @@ class CompanyView:
                         ),
                         as_line("\n"),
                     )
-                    for company in companies
+                    for index, company in enumerate(companies, start=1)
                 ),
             )
         else:

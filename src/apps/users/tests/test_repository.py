@@ -30,10 +30,11 @@ async def test_repository_lists_requested_page() -> None:
     await repository.create_user("first@example.com", "password")
     await repository.create_user("second@example.com", "password")
     await repository.create_user("third@example.com", "password")
-    all_users = await repository.list()
+    all_users, total = await repository.list()
 
-    page = await repository.list(limit=1, offset=1)
+    page, _ = await repository.list(limit=1, offset=1)
 
+    assert total == 3
     assert page == all_users[1:2]
 
 

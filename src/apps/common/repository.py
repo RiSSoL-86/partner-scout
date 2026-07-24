@@ -1,3 +1,5 @@
+from collections.abc import Sequence
+
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 
@@ -18,18 +20,27 @@ class BaseRepository[ModelT: models.Model, PrimaryKeyT]:
 
     async def list(
         self,
-        limit: int = 20,
+        order_by: Sequence[str] = ("pk",),
         offset: int = 0,
-    ) -> list[ModelT]:
-        """Return a page of model instances."""
+        limit: int = 20,
+    ) -> tuple[list[ModelT], int]:
+        """Return a page of model instances and their total.
+
+        ``order_by`` holds the ordering fields; ordering defaults to the
+        primary key.
+        """
         if limit < 1:
             raise ValueError("limit must be greater than zero")
         if offset < 0:
             raise ValueError("offset must be greater than or equal to zero")
 
-        queryset = self.model.objects.order_by("pk")  # type: ignore[attr-defined]
-        queryset = queryset[offset : offset + limit]
-        return [instance async for instance in queryset]
+        queryset = self.model.objects.all()  # type: ignore[attr-defined]
+        total = await queryset.acount()
+        queryset = queryset.order_by(*order_by)
+        page = [
+            instance async for instance in queryset[offset : offset + limit]
+        ]
+        return page, total
 
     @staticmethod
     async def create(instance: ModelT) -> ModelT:

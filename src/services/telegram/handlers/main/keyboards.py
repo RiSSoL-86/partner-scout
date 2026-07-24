@@ -21,6 +21,10 @@ class MainKeyboard:
             callback_data=MainCallback(section="companies"),
         )
         builder.button(
+            text="Persons 👥",
+            callback_data=MainCallback(section="persons"),
+        )
+        builder.button(
             text="Exit ❌",
             callback_data=MainCallback(section="close"),
         )
