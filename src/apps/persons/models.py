@@ -35,7 +35,7 @@ class Person(UUIDAbstractModel, TimestampedAbstractModel):
         constraints = [
             models.UniqueConstraint(
                 Lower("normalized_name"),
-                name="unique_normalized_name_name",
+                name="unique_normalized_name",
             ),
         ]
         indexes = [

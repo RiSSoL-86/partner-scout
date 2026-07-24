@@ -22,7 +22,6 @@ def create_person() -> Person:
     return Person.objects.create(
         first_name="Ivan",
         last_name="Petrov",
-        normalized_name="ivan petrov",
     )
 
 
@@ -211,15 +210,11 @@ def test_scan_indexes_are_declared() -> None:
 
 
 def test_person_snapshot_indexes_are_declared() -> None:
-    """Declare indexes used by snapshot reports."""
+    """Declare the index used to page a scan snapshots by time."""
     indexes = {index.name: index for index in PersonSnapshot._meta.indexes}
 
-    assert indexes["ps_scan_position_idx"].fields == [
+    assert indexes["snapshot_scan_created_idx"].fields == [
         "scan",
-        "position_type",
-    ]
-    assert indexes["ps_person_created_idx"].fields == [
-        "person",
         "created_timestamp",
     ]
 

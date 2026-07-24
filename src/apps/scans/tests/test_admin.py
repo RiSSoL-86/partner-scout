@@ -30,7 +30,6 @@ def create_person() -> Person:
     return Person.objects.create(
         first_name="Ivan",
         last_name="Petrov",
-        normalized_name="ivan petrov",
     )
 
 
