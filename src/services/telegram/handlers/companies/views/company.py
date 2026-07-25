@@ -37,31 +37,8 @@ class CompanyView:
         """Build kwargs for displaying the companies list."""
         if companies:
             last = offset + len(companies)
-            content = as_list(
-                as_line(f"Companies {offset + 1}-{last}/{total} 📊:"),
-                *(
-                    as_list(
-                        as_line(f"{offset + index}. ", company.name),
-                        as_line("ID: ", company.id),
-                        as_line("Website: ", company.website_url),
-                        as_line(
-                            "Scan enabled: ",
-                            "✅" if company.scan_enabled else "❌",
-                        ),
-                        as_line(
-                            "Last scanned: ",
-                            (
-                                company.last_scanned_at.strftime(
-                                    "%Y-%m-%d %H:%M:%S"
-                                )
-                                if company.last_scanned_at is not None
-                                else "➖"
-                            ),
-                        ),
-                        as_line("\n"),
-                    )
-                    for index, company in enumerate(companies, start=1)
-                ),
+            content: Text = as_line(
+                f"Companies {offset + 1}-{last}/{total} 📊:"
             )
         else:
             content = Text("Companies list is empty 🤷‍♂️")
@@ -85,11 +62,7 @@ class CompanyView:
             content = as_list(
                 header,
                 as_line(f"Scan {scan_index + 1}/{scans_total} 🔎"),
-                as_line("ID: ", scan.id),
                 as_line("Status: ", scan.get_status_display()),
-                as_line("Pages scanned: ", scan.pages_scanned),
-                as_line("Report: ", scan.report or "empty"),
-                as_line("Error: ", scan.error or "empty"),
                 as_line(
                     "Scan date: ",
                     (

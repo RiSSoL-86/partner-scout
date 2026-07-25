@@ -37,20 +37,8 @@ class PersonView:
     ) -> dict[str, Any]:
         """Build kwargs for displaying a page of all persons."""
         if persons:
-            header = (
-                f"Persons {offset + 1}-{offset + len(persons)}/{total} 👥:"
-            )
-            content = as_list(
-                as_line(header),
-                *(
-                    as_list(
-                        as_line(f"{offset + index}. ", person.normalized_name),
-                        as_line("ID: ", person.id),
-                        as_line("\n"),
-                    )
-                    for index, person in enumerate(persons, start=1)
-                ),
-            )
+            last = offset + len(persons)
+            content: Text = as_line(f"Persons {offset + 1}-{last}/{total} 👥:")
         else:
             content = Text("Persons list is empty 🤷‍♂️")
 
@@ -89,19 +77,9 @@ class PersonView:
     ) -> dict[str, Any]:
         """Build kwargs for displaying a page of persons by surname letter."""
         if persons:
-            content = as_list(
-                as_line(
-                    f"Surnames on {letter} {offset + 1}-"
-                    f"{offset + len(persons)}/{total} 👤:",
-                ),
-                *(
-                    as_list(
-                        as_line(f"{offset + index}. ", person.normalized_name),
-                        as_line("ID: ", person.id),
-                        as_line("\n"),
-                    )
-                    for index, person in enumerate(persons, start=1)
-                ),
+            last = offset + len(persons)
+            content: Text = as_line(
+                f"Surnames on {letter} {offset + 1}-{last}/{total} 👤:",
             )
         else:
             content = Text("No persons for this letter 🤷‍♂️")

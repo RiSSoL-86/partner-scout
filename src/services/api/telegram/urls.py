@@ -1,21 +1,21 @@
 from dmr.routing import Router, path
 
 from services.api.telegram.controllers import (
-    TelegramCompanyDetailController,
-    TelegramPersonDetailController,
+    CompanyScanDetailController,
+    PersonDetailController,
 )
 
 router = Router(
     prefix="telegram/",
     urls=[
         path(
-            "companies/<uuid:company_id>",
-            TelegramCompanyDetailController.as_view(),
-            name="telegram_company_detail",
+            "companies/scans/<uuid:scan_id>",
+            CompanyScanDetailController.as_view(),
+            name="telegram_company_scan_detail",
         ),
         path(
             "persons/<uuid:person_id>",
-            TelegramPersonDetailController.as_view(),
+            PersonDetailController.as_view(),
             name="telegram_person_detail",
         ),
     ],

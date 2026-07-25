@@ -2,10 +2,10 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 
-class BaseTelegramService(ABC):
-    """Base class for Telegram application services."""
+class BaseService(ABC):
+    """Base class for application services."""
 
     @abstractmethod
     async def execute(self, *args: Any, **kwargs: Any) -> Any:
-        """Run the Telegram business operation."""
+        """Run the service business operation."""
         raise NotImplementedError

@@ -1,14 +1,14 @@
 from typing import TYPE_CHECKING, final, override
 
+from apps.common.services.base import BaseService
 from apps.companies.repository import CompanyRepository
-from services.telegram.handlers.common.services.base import BaseTelegramService
 
 if TYPE_CHECKING:
     from apps.companies.models import Company
 
 
 @final
-class CompanyListTelegramService(BaseTelegramService):
+class CompanyListService(BaseService):
     """Load companies for Telegram handlers."""
 
     company_repository = CompanyRepository()

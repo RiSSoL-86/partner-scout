@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Literal, final, override
 from django.conf import settings
 from dmr.security.jwt import JWToken
 
-from services.api.common.services.base import BaseService
+from apps.common.services.base import BaseService
 
 if TYPE_CHECKING:
     from apps.users.models import User

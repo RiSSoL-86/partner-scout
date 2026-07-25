@@ -10,28 +10,18 @@ from services.telegram.handlers.common.reports import build_report_url
 from services.telegram.handlers.companies.callbacks import (
     CompanyCallback,
     CompanyListCallback,
-    PersonSnapshotCallback,
     ScanCallback,
 )
 from services.telegram.handlers.companies.keyboards.company import (
     CompanyKeyboard,
 )
-from services.telegram.handlers.companies.keyboards.person_snapshot import (
-    PersonSnapshotKeyboard,
-)
 from services.telegram.handlers.companies.services.list import (
-    CompanyListTelegramService,
-)
-from services.telegram.handlers.companies.services.person_snapshots import (
-    PersonSnapshotListTelegramService,
+    CompanyListService,
 )
 from services.telegram.handlers.companies.services.scan import (
-    CompanyScanTelegramService,
+    CompanyScanService,
 )
 from services.telegram.handlers.companies.views.company import CompanyView
-from services.telegram.handlers.companies.views.person_snapshot import (
-    PersonSnapshotView,
-)
 from services.telegram.handlers.main.callbacks import MainCallback
 from services.telegram.handlers.main.keyboards import MainKeyboard
 from services.telegram.handlers.main.views import MainView
@@ -65,7 +55,7 @@ async def show_companies_list(
     callback_data: CompanyListCallback,
 ) -> None:
     """Show a page of the companies list from the database."""
-    service = CompanyListTelegramService()
+    service = CompanyListService()
     companies, total = await service.execute(
         offset=callback_data.offset,
         limit=PAGE_SIZE,
@@ -95,7 +85,7 @@ async def show_company_scan(
     callback_data: ScanCallback,
 ) -> None:
     """Show one company scan with navigation to adjacent scans."""
-    service = CompanyScanTelegramService()
+    service = CompanyScanService()
     company, scan, scan_index, scans_total = await service.execute(
         company_id=UUID(callback_data.company_id),
         scan_index=callback_data.scan_index,
@@ -104,11 +94,15 @@ async def show_company_scan(
         await callback_query.answer("Company not found")
         return
 
+    report_url = ""
+    if scan is not None:
+        report_url = build_report_url("companies/scans", str(scan.id))
+
     keyboard = CompanyKeyboard.build_scan_keyboard(
         company_id=callback_data.company_id,
         scan_index=scan_index,
         scans_total=scans_total,
-        report_url=build_report_url("companies", callback_data.company_id),
+        report_url=report_url,
     )
     content = CompanyView.build_scan_message(
         keyboard=keyboard,
@@ -116,43 +110,6 @@ async def show_company_scan(
         scan=scan,
         scan_index=scan_index,
         scans_total=scans_total,
-    )
-    await safe_edit_text(message, **content)
-    await callback_query.answer()
-
-
-@router.callback_query(PersonSnapshotCallback.filter())
-@require_message
-async def show_scan_person_snapshots(
-    callback_query: CallbackQuery,
-    message: Message,
-    callback_data: PersonSnapshotCallback,
-) -> None:
-    """Show a page of person snapshots found in one company scan."""
-    service = PersonSnapshotListTelegramService()
-    scan, scan_index, snapshots, snapshots_total = await service.execute(
-        company_id=UUID(callback_data.company_id),
-        scan_index=callback_data.scan_index,
-        offset=callback_data.offset,
-        limit=PAGE_SIZE,
-    )
-    if scan is None:
-        await callback_query.answer("Scan not found")
-        return
-
-    keyboard = PersonSnapshotKeyboard.build_list_keyboard(
-        company_id=callback_data.company_id,
-        scan_index=scan_index,
-        offset=callback_data.offset,
-        page_size=PAGE_SIZE,
-        total=snapshots_total,
-    )
-    content = PersonSnapshotView.build_list_message(
-        keyboard=keyboard,
-        scan=scan,
-        snapshots=snapshots,
-        offset=callback_data.offset,
-        snapshots_total=snapshots_total,
     )
     await safe_edit_text(message, **content)
     await callback_query.answer()

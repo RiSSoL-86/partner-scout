@@ -5,12 +5,12 @@ from apps.common.services.base import BaseService
 from apps.persons.repository import PersonMentionRepository, PersonRepository
 
 if TYPE_CHECKING:
-    from apps.persons.models import Person, PersonMention
+    from apps.persons.models import Person
 
 
 @final
-class PersonDetailService(BaseService):
-    """Load one person and their mentions for the Telegram report page."""
+class PersonMentionsService(BaseService):
+    """Load a person and their mentions count for Telegram handlers."""
 
     person_repository = PersonRepository()
     mention_repository = PersonMentionRepository()
@@ -19,13 +19,13 @@ class PersonDetailService(BaseService):
     async def execute(
         self,
         person_id: UUID,
-    ) -> tuple[Person, list[PersonMention]] | None:
-        """Return the person and their mentions, or None when missing."""
+    ) -> tuple[Person | None, int]:
+        """Return the person and how many mentions they have."""
         person = await self.person_repository.get(person_id)
         if person is None:
-            return None
+            return None, 0
 
-        mentions = await self.mention_repository.list_by_person_id(
+        total = await self.mention_repository.count_by_person_id(
             person_id=person_id,
         )
-        return person, mentions
+        return person, total

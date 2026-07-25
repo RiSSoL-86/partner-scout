@@ -22,8 +22,7 @@ class PersonLetterCallback(CallbackData, prefix="person_letters"):
     offset: int = 0
 
 
-class PersonMentionCallback(CallbackData, prefix="mentions"):
-    """Represent navigation payloads for a person mentions page."""
+class PersonMentionsCallback(CallbackData, prefix="mentions"):
+    """Represent the payload opening one person card."""
 
     person_id: str
-    offset: int = 0

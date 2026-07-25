@@ -7,7 +7,6 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from services.telegram.handlers.companies.callbacks import (
     CompanyCallback,
     CompanyListCallback,
-    PersonSnapshotCallback,
     ScanCallback,
 )
 from services.telegram.handlers.main.callbacks import MainCallback
@@ -27,7 +26,7 @@ class CompanyKeyboard:
         """Build the companies section inline keyboard."""
         builder = InlineKeyboardBuilder()
         builder.button(
-            text="Companies list 📈",
+            text="All companies 📈",
             callback_data=CompanyListCallback(),
         )
         builder.button(
@@ -50,9 +49,9 @@ class CompanyKeyboard:
     ) -> InlineKeyboardMarkup:
         """Build the companies list actions inline keyboard."""
         builder = InlineKeyboardBuilder()
-        for company in companies:
+        for index, company in enumerate(companies, start=offset + 1):
             builder.button(
-                text=f"Details: {company.name} 🔎",
+                text=f"{index}. {company.name} 🔎",
                 callback_data=ScanCallback(company_id=str(company.id)),
             )
 
@@ -100,7 +99,6 @@ class CompanyKeyboard:
 
         has_older = scan_index + 1 < scans_total
         has_newer = scan_index > 0
-        can_view_snapshots = scans_total > 0
 
         sizes: list[int] = []
 
@@ -125,16 +123,6 @@ class CompanyKeyboard:
             nav_count += 1
         if nav_count:
             sizes.append(nav_count)
-
-        if can_view_snapshots:
-            builder.button(
-                text="People found 👥",
-                callback_data=PersonSnapshotCallback(
-                    company_id=company_id,
-                    scan_index=scan_index,
-                ),
-            )
-            sizes.append(1)
 
         if report_url.startswith("https://"):
             builder.button(

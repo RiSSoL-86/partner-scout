@@ -109,7 +109,13 @@ testpaths = ["src"]
 [tool.coverage.run]
 omit = [
     "src/**/tests/*",
-    "src/conftest.py",
+    "src/**/conftest.py",
+    "src/**/manage.py",
+    "src/django_project/asgi.py",
+    "src/django_project/celery.py",
+    "src/services/telegram/core/*",
+    "src/services/telegram/handlers/routes.py",
+    "src/services/celery_tasks/dummy.py",
 ]
 
 [tool.coverage.report]

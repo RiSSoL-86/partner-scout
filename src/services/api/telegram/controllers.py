@@ -2,7 +2,6 @@ from http import HTTPStatus
 from typing import final
 
 from django.http import HttpResponse
-from django.template.loader import render_to_string
 from dmr import (
     Controller,
     Path,
@@ -14,30 +13,26 @@ from dmr.plugins.pydantic import PydanticSerializer
 from dmr.renderers import FileRenderer
 
 from apps.common.services.report_token import ReportTokenService
+from services.api.common.schemas import ReportQuery
 from services.api.telegram.path_params import (
-    TelegramCompanyPathParams,
-    TelegramPersonPathParams,
+    CompanyScanPathParams,
+    PersonPathParams,
 )
-from services.api.telegram.schemas import TelegramReportQuery
-from services.api.telegram.services.company_detail import (
-    TelegramCompanyDetailService,
+from services.api.telegram.schemas import (
+    CompanyScanResponse,
+    PersonReportResponse,
+)
+from services.api.telegram.services.company_scan_detail import (
+    CompanyScanDetailService,
 )
 from services.api.telegram.services.person_detail import (
-    TelegramPersonDetailService,
+    PersonDetailService,
 )
-
-
-def _html_response(body: str, status: HTTPStatus) -> HttpResponse:
-    """Return an HTML response with the given body and status."""
-    return HttpResponse(
-        body,
-        status=status,
-        content_type="text/html; charset=utf-8",
-    )
+from services.api.telegram.utils import render_html
 
 
 @final
-class TelegramCompanyDetailController(Controller[PydanticSerializer]):
+class CompanyScanDetailController(Controller[PydanticSerializer]):
     """Render one company report as HTML for a Telegram Mini App."""
 
     auth = None
@@ -67,34 +62,55 @@ class TelegramCompanyDetailController(Controller[PydanticSerializer]):
     )
     async def get(
         self,
-        parsed_path: Path[TelegramCompanyPathParams],
-        parsed_query: Query[TelegramReportQuery],
+        parsed_path: Path[CompanyScanPathParams],
+        parsed_query: Query[ReportQuery],
     ) -> HttpResponse:
-        """Return the company report page for a valid signed token."""
-        company_id = str(parsed_path.company_id)
-        if ReportTokenService.unsign(parsed_query.token) != company_id:
-            return _html_response(
-                "<h1>403 Forbidden</h1><p>Invalid or expired link.</p>",
-                HTTPStatus.FORBIDDEN,
+        """Return the company scan report page for a valid signed token."""
+        scan_id = str(parsed_path.scan_id)
+        if ReportTokenService.unsign(parsed_query.token) != scan_id:
+            status = HTTPStatus.FORBIDDEN
+            context = {
+                "code": status.value,
+                "title": status.phrase,
+                "message": "Invalid or expired link.",
+            }
+            return await render_html(
+                status=status,
+                context=context,
+                template_name="telegram/report_error.html",
             )
 
-        service = TelegramCompanyDetailService()
-        company = await service.execute(company_id=parsed_path.company_id)
-        if company is None:
-            return _html_response(
-                "<h1>404 Not Found</h1><p>Company not found.</p>",
-                HTTPStatus.NOT_FOUND,
+        service = CompanyScanDetailService()
+        result = await service.execute(scan_id=parsed_path.scan_id)
+        if result is None:
+            status = HTTPStatus.NOT_FOUND
+            context = {
+                "code": status.value,
+                "title": status.phrase,
+                "message": "Scan not found.",
+            }
+            return await render_html(
+                status=status,
+                context=context,
+                template_name="telegram/report_error.html",
             )
 
-        html = render_to_string(
-            "telegram/company_report.html",
-            context={"company": company},
+        scan, scan_index, scans_total, person_snapshots = result
+        report = CompanyScanResponse.build(
+            scan=scan,
+            scan_index=scan_index,
+            scans_total=scans_total,
+            person_snapshots=person_snapshots,
         )
-        return _html_response(html, HTTPStatus.OK)
+        return await render_html(
+            status=HTTPStatus.OK,
+            context={"report": report},
+            template_name="telegram/company_report.html",
+        )
 
 
 @final
-class TelegramPersonDetailController(Controller[PydanticSerializer]):
+class PersonDetailController(Controller[PydanticSerializer]):
     """Render one person report as HTML for a Telegram Mini App."""
 
     auth = None
@@ -124,27 +140,43 @@ class TelegramPersonDetailController(Controller[PydanticSerializer]):
     )
     async def get(
         self,
-        parsed_path: Path[TelegramPersonPathParams],
-        parsed_query: Query[TelegramReportQuery],
+        parsed_path: Path[PersonPathParams],
+        parsed_query: Query[ReportQuery],
     ) -> HttpResponse:
         """Return the person report page for a valid signed token."""
         person_id = str(parsed_path.person_id)
         if ReportTokenService.unsign(parsed_query.token) != person_id:
-            return _html_response(
-                "<h1>403 Forbidden</h1><p>Invalid or expired link.</p>",
-                HTTPStatus.FORBIDDEN,
+            status = HTTPStatus.FORBIDDEN
+            context = {
+                "code": status.value,
+                "title": status.phrase,
+                "message": "Invalid or expired link.",
+            }
+            return await render_html(
+                status=status,
+                context=context,
+                template_name="telegram/report_error.html",
             )
 
-        service = TelegramPersonDetailService()
-        person = await service.execute(person_id=parsed_path.person_id)
-        if person is None:
-            return _html_response(
-                "<h1>404 Not Found</h1><p>Person not found.</p>",
-                HTTPStatus.NOT_FOUND,
+        service = PersonDetailService()
+        result = await service.execute(person_id=parsed_path.person_id)
+        if result is None:
+            status = HTTPStatus.NOT_FOUND
+            context = {
+                "code": status.value,
+                "title": status.phrase,
+                "message": "Person not found.",
+            }
+            return await render_html(
+                status=status,
+                context=context,
+                template_name="telegram/report_error.html",
             )
 
-        html = render_to_string(
-            "telegram/person_report.html",
-            context={"person": person},
+        person, mentions = result
+        report = PersonReportResponse.build(person=person, mentions=mentions)
+        return await render_html(
+            status=HTTPStatus.OK,
+            context={"report": report},
+            template_name="telegram/person_report.html",
         )
-        return _html_response(html, HTTPStatus.OK)

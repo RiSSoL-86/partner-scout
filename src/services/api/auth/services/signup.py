@@ -2,9 +2,9 @@ from typing import TYPE_CHECKING, final, override
 
 from django.db import IntegrityError
 
+from apps.common.services.base import BaseService
 from apps.users.repository import UserRepository
 from services.api.auth.exceptions import UserAlreadyExistsError
-from services.api.common.services.base import BaseService
 
 if TYPE_CHECKING:
     from apps.users.models import User

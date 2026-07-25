@@ -7,7 +7,7 @@ from apps.common.services.report_token import ReportTokenService
 
 
 def build_report_url(
-    section: Literal["companies", "persons"], resource_id: str
+    section: Literal["companies/scans", "persons"], resource_id: str
 ) -> str:
     """Build a report url based on section and resource id."""
     token = ReportTokenService.sign(resource_id)

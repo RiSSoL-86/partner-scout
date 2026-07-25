@@ -7,7 +7,7 @@ from services.telegram.handlers.persons.callbacks import (
     PersonCallback,
     PersonLetterCallback,
     PersonListCallback,
-    PersonMentionCallback,
+    PersonMentionsCallback,
 )
 
 if TYPE_CHECKING:
@@ -56,10 +56,10 @@ class PersonKeyboard:
     ) -> InlineKeyboardMarkup:
         """Build the full persons list inline keyboard."""
         builder = InlineKeyboardBuilder()
-        for person in persons:
+        for index, person in enumerate(persons, start=offset + 1):
             builder.button(
-                text=f"Mentions: {person.normalized_name} 📎",
-                callback_data=PersonMentionCallback(person_id=str(person.id)),
+                text=f"{index}. {person.normalized_name} 📎",
+                callback_data=PersonMentionsCallback(person_id=str(person.id)),
             )
 
         nav_count = 0
@@ -133,10 +133,10 @@ class PersonKeyboard:
     ) -> InlineKeyboardMarkup:
         """Build the persons-by-letter list inline keyboard."""
         builder = InlineKeyboardBuilder()
-        for person in persons:
+        for index, person in enumerate(persons, start=offset + 1):
             builder.button(
-                text=f"Mentions: {person.normalized_name} 📎",
-                callback_data=PersonMentionCallback(person_id=str(person.id)),
+                text=f"{index}. {person.normalized_name} 📎",
+                callback_data=PersonMentionsCallback(person_id=str(person.id)),
             )
 
         nav_count = 0

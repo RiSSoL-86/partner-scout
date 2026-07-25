@@ -11,7 +11,33 @@ class ScanRepository(BaseRepository[Scan, UUID]):
 
     model = Scan
 
-    async def get_company_scan_by_position(
+    async def get_with_position(
+        self,
+        scan_id: UUID,
+    ) -> tuple[Scan | None, int, int]:
+        """Return a scan by id with its position among its company scans.
+
+        Scans are ordered newest first, so the index counts how many newer
+        scans the same company has. Returns ``(None, 0, 0)`` when the scan
+        does not exist.
+        """
+        scan = (
+            await self.model.objects.select_related("company")
+            .filter(id=scan_id)
+            .afirst()
+        )
+        if scan is None:
+            return None, 0, 0
+
+        company_scans = self.model.objects.filter(company_id=scan.company_id)
+        total = await company_scans.acount()
+        scan_index = await company_scans.filter(
+            created_timestamp__gt=scan.created_timestamp,
+        ).acount()
+
+        return scan, scan_index, total
+
+    async def get_by_position(
         self,
         company_id: UUID,
         scan_index: int,
@@ -51,19 +77,14 @@ class PersonSnapshotRepository(BaseRepository[PersonSnapshot, UUID]):
 
     model = PersonSnapshot
 
-    async def list_for_scan(
+    async def list_by_scan_id(
         self,
         scan_id: UUID,
-        offset: int = 0,
-        limit: int = 5,
-    ) -> tuple[list[PersonSnapshot], int]:
-        """Return a page of person snapshots for a scan and their total."""
-        queryset = self.model.objects.filter(scan_id=scan_id)
-        total = await queryset.acount()
-        ordered = queryset.select_related("person", "source").order_by(
-            "created_timestamp",
+    ) -> list[PersonSnapshot]:
+        """Return every person snapshot for a scan with related records."""
+        ordered = (
+            self.model.objects.filter(scan_id=scan_id)
+            .select_related("person", "source")
+            .order_by("confirmation_level", "person__normalized_name")
         )
-        page = [
-            snapshot async for snapshot in ordered[offset : offset + limit]
-        ]
-        return page, total
+        return [snapshot async for snapshot in ordered]

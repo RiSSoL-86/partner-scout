@@ -3,13 +3,13 @@ from uuid import UUID
 from pydantic import BaseModel
 
 
-class TelegramCompanyPathParams(BaseModel):
-    """Path parameters identifying a company report."""
+class CompanyScanPathParams(BaseModel):
+    """Path parameters identifying a company scan report."""
 
-    company_id: UUID
+    scan_id: UUID
 
 
-class TelegramPersonPathParams(BaseModel):
+class PersonPathParams(BaseModel):
     """Path parameters identifying a person report."""
 
     person_id: UUID

@@ -1,14 +1,14 @@
 from typing import TYPE_CHECKING, final, override
 
+from apps.common.services.base import BaseService
 from apps.persons.repository import PersonRepository
-from services.telegram.handlers.common.services.base import BaseTelegramService
 
 if TYPE_CHECKING:
     from apps.persons.models import Person
 
 
 @final
-class PersonListTelegramService(BaseTelegramService):
+class PersonListService(BaseService):
     """Load a page of all persons for Telegram handlers."""
 
     person_repository = PersonRepository()

@@ -48,17 +48,18 @@ class PersonMentionRepository(BaseRepository[PersonMention, UUID]):
 
     model = PersonMention
 
-    async def list_for_person(
+    async def list_by_person_id(
         self,
         person_id: UUID,
-        offset: int = 0,
-        limit: int = 5,
-    ) -> tuple[list[PersonMention], int]:
-        """Return a newest-first page of person mentions and their total."""
-        queryset = self.model.objects.filter(person_id=person_id)
-        total = await queryset.acount()
-        ordered = queryset.select_related("source").order_by(
-            "-created_timestamp",
+    ) -> list[PersonMention]:
+        """Return every mention for a person newest-first with its source."""
+        ordered = (
+            self.model.objects.filter(person_id=person_id)
+            .select_related("source")
+            .order_by("-created_timestamp")
         )
-        page = [mention async for mention in ordered[offset : offset + limit]]
-        return page, total
+        return [mention async for mention in ordered]
+
+    async def count_by_person_id(self, person_id: UUID) -> int:
+        """Return how many mentions a person has."""
+        return await self.model.objects.filter(person_id=person_id).acount()

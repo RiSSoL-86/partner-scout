@@ -1,9 +1,9 @@
 from typing import TYPE_CHECKING, final, override
 from uuid import UUID
 
+from apps.common.services.base import BaseService
 from apps.companies.repository import CompanyRepository
 from apps.scans.repository import ScanRepository
-from services.telegram.handlers.common.services.base import BaseTelegramService
 
 if TYPE_CHECKING:
     from apps.companies.models import Company
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 
 @final
-class CompanyScanTelegramService(BaseTelegramService):
+class CompanyScanService(BaseService):
     """Load one company scan by position for Telegram handlers."""
 
     company_repository = CompanyRepository()
@@ -28,7 +28,7 @@ class CompanyScanTelegramService(BaseTelegramService):
             scan,
             scan_index,
             scans_total,
-        ) = await self.scan_repository.get_company_scan_by_position(
+        ) = await self.scan_repository.get_by_position(
             company_id=company_id,
             scan_index=scan_index,
         )

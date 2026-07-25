@@ -20,11 +20,3 @@ class ScanCallback(CallbackData, prefix="scans"):
 
     company_id: str
     scan_index: int = 0
-
-
-class PersonSnapshotCallback(CallbackData, prefix="snapshots"):
-    """Represent navigation payloads for scan person snapshots."""
-
-    company_id: str
-    scan_index: int = 0
-    offset: int = 0

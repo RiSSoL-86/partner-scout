@@ -14,27 +14,27 @@ from services.telegram.handlers.persons.callbacks import (
     PersonCallback,
     PersonLetterCallback,
     PersonListCallback,
-    PersonMentionCallback,
+    PersonMentionsCallback,
 )
 from services.telegram.handlers.persons.keyboards.person import PersonKeyboard
-from services.telegram.handlers.persons.keyboards.person_mention import (
-    PersonMentionKeyboard,
+from services.telegram.handlers.persons.keyboards.person_mentions import (
+    PersonMentionsKeyboard,
 )
 from services.telegram.handlers.persons.services.alphabet import (
-    PersonAlphabetTelegramService,
+    PersonAlphabetService,
 )
 from services.telegram.handlers.persons.services.by_letter import (
-    PersonByLetterListTelegramService,
+    PersonByLetterListService,
 )
 from services.telegram.handlers.persons.services.list import (
-    PersonListTelegramService,
+    PersonListService,
 )
-from services.telegram.handlers.persons.services.person_mention import (
-    PersonMentionListTelegramService,
+from services.telegram.handlers.persons.services.person_mentions import (
+    PersonMentionsService,
 )
 from services.telegram.handlers.persons.views.person import PersonView
-from services.telegram.handlers.persons.views.person_mention import (
-    PersonMentionView,
+from services.telegram.handlers.persons.views.person_mentions import (
+    PersonMentionsView,
 )
 
 if TYPE_CHECKING:
@@ -67,7 +67,7 @@ async def show_persons_list(
     callback_data: PersonListCallback,
 ) -> None:
     """Show a page of all persons ordered by name."""
-    service = PersonListTelegramService()
+    service = PersonListService()
     persons, total = await service.execute(
         offset=callback_data.offset,
         limit=PAGE_SIZE,
@@ -96,7 +96,7 @@ async def show_persons_alphabet(
     message: Message,
 ) -> None:
     """Show the persons surname alphabet index."""
-    service = PersonAlphabetTelegramService()
+    service = PersonAlphabetService()
     initials = await service.execute()
 
     keyboard = PersonKeyboard.build_alphabet_keyboard(initials=initials)
@@ -116,7 +116,7 @@ async def show_persons_by_letter(
     callback_data: PersonLetterCallback,
 ) -> None:
     """Show a page of persons for one surname initial."""
-    service = PersonByLetterListTelegramService()
+    service = PersonByLetterListService()
     persons, total = await service.execute(
         letter=callback_data.letter,
         offset=callback_data.offset,
@@ -141,36 +141,28 @@ async def show_persons_by_letter(
     await callback_query.answer()
 
 
-@router.callback_query(PersonMentionCallback.filter())
+@router.callback_query(PersonMentionsCallback.filter())
 @require_message
 async def show_person_mentions(
     callback_query: CallbackQuery,
     message: Message,
-    callback_data: PersonMentionCallback,
+    callback_data: PersonMentionsCallback,
 ) -> None:
-    """Show a page of one person mentions ordered by time."""
-    service = PersonMentionListTelegramService()
-    person, mentions, total = await service.execute(
+    """Show one person card with a link to the full report."""
+    service = PersonMentionsService()
+    person, total = await service.execute(
         person_id=UUID(callback_data.person_id),
-        offset=callback_data.offset,
-        limit=PAGE_SIZE,
     )
     if person is None:
         await callback_query.answer("Person not found")
         return
 
-    keyboard = PersonMentionKeyboard.build_list_keyboard(
-        person_id=callback_data.person_id,
-        offset=callback_data.offset,
-        page_size=PAGE_SIZE,
-        total=total,
+    keyboard = PersonMentionsKeyboard.build_person_keyboard(
         report_url=build_report_url("persons", callback_data.person_id),
     )
-    content = PersonMentionView.build_list_message(
+    content = PersonMentionsView.build_person_message(
         keyboard=keyboard,
         person=person,
-        mentions=mentions,
-        offset=callback_data.offset,
         total=total,
     )
     await safe_edit_text(message, **content)
