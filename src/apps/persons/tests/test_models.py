@@ -14,7 +14,6 @@ def create_person() -> Person:
     return Person.objects.create(
         first_name="Ivan",
         last_name="Petrov",
-        normalized_name="ivan petrov",
     )
 
 
@@ -33,26 +32,37 @@ def test_person_defaults() -> None:
     person = Person.objects.create(
         first_name="Ivan",
         last_name="Petrov",
-        normalized_name="ivan petrov",
     )
 
     assert isinstance(person.id, uuid.UUID)
     assert person.middle_name == ""
     assert person.created_timestamp is not None
-    assert str(person) == "ivan petrov"
+    assert str(person) == "Petrov Ivan"
 
 
 @pytest.mark.django_db
 def test_person_full_name_includes_middle_name() -> None:
-    """Include a known middle name in the display representation."""
+    """Assemble the normalized name as last, first then middle name."""
     person = Person.objects.create(
         first_name="Ivan",
         middle_name="Ivanovich",
         last_name="Petrov",
-        normalized_name="ivan ivanovich petrov",
     )
 
-    assert str(person) == "ivan ivanovich petrov"
+    assert str(person) == "Petrov Ivan Ivanovich"
+
+
+@pytest.mark.django_db
+def test_normalized_name_is_generated_ignoring_input() -> None:
+    """Overwrite any supplied normalized name with the assembled value."""
+    person = Person.objects.create(
+        first_name="Ivan",
+        middle_name="Ivanovich",
+        last_name="Petrov",
+        normalized_name="whatever",
+    )
+
+    assert person.normalized_name == "Petrov Ivan Ivanovich"
 
 
 def test_normalized_name_has_case_insensitive_unique_constraint() -> None:
@@ -64,7 +74,7 @@ def test_normalized_name_has_case_insensitive_unique_constraint() -> None:
         if isinstance(constraint, models.UniqueConstraint)
     }
 
-    constraint = constraints["unique_normalized_name_name"]
+    constraint = constraints["unique_normalized_name"]
     assert field.unique is False
     assert len(constraint.expressions) == 1
     assert isinstance(constraint.expressions[0], Lower)

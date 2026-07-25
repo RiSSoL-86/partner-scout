@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, final, override
 
-from services.api.common.services.base import BaseService
+from apps.common.services.base import BaseService
 
 if TYPE_CHECKING:
     from apps.users.models import User

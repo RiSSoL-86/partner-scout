@@ -5,6 +5,7 @@ description = "AI-powered service for monitoring consulting firm partners."
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
+    "aiogram>=3.30.0",
     "celery[redis]>=5.6.3",
     "django>=6.0.7",
     "django-environ>=0.12.0",
@@ -108,7 +109,13 @@ testpaths = ["src"]
 [tool.coverage.run]
 omit = [
     "src/**/tests/*",
-    "src/conftest.py",
+    "src/**/conftest.py",
+    "src/**/manage.py",
+    "src/django_project/asgi.py",
+    "src/django_project/celery.py",
+    "src/services/telegram/core/*",
+    "src/services/telegram/handlers/routes.py",
+    "src/services/celery_tasks/dummy.py",
 ]
 
 [tool.coverage.report]

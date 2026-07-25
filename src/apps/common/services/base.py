@@ -3,9 +3,9 @@ from typing import Any
 
 
 class BaseService(ABC):
-    """Base class for all application services."""
+    """Base class for application services."""
 
     @abstractmethod
     async def execute(self, *args: Any, **kwargs: Any) -> Any:
-        """Run the business operation."""
+        """Run the service business operation."""
         raise NotImplementedError

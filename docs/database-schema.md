@@ -69,6 +69,10 @@ The evidence-level link between a person and a source.
 A mention means the person appeared in a source. It does not necessarily mean
 the person currently works for the scanned company.
 
+Mentions drive the person side of the app: reading a person's mentions over
+time reconstructs their movement across sources, independently of any single
+company scan.
+
 ### PersonSnapshot
 
 The scanner's extracted view of a person's role for one scan.
@@ -79,6 +83,9 @@ This is scan-level state. It answers:
 During this scan, what did we conclude about this person and their role at this
 company?
 ```
+
+Snapshots drive the company side of the app: navigating a company's scans shows
+what each scan concluded at that point in time.
 
 ## Scan Flow
 
@@ -110,11 +117,15 @@ latest completed Scan for Company
 
 Person history report:
 
+The person side tracks a person's movement over time through mentions, not
+through scan snapshots. `PersonSnapshot` is scan-level company state, while
+`PersonMention` is the person's own evidence trail across sources.
+
 ```text
 Person
--> Person.snapshots ordered by scan timestamp
--> PersonSnapshot.scan.company
--> PersonSnapshot.source
+-> Person.source_mentions ordered by mention timestamp
+-> PersonMention.source
+-> Source.scan_links -> ScanSource.scan.company
 ```
 
 Source evidence report:

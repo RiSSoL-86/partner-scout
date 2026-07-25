@@ -1,3 +1,5 @@
+from typing import final
+
 from pydantic import AliasGenerator, BaseModel, ConfigDict, alias_generators
 
 
@@ -13,3 +15,10 @@ class CamelCaseModel(BaseModel):
         validate_by_alias=True,
         from_attributes=True,
     )
+
+
+@final
+class ReportQuery(BaseModel):
+    """Query parameters carrying the signed report link token."""
+
+    token: str

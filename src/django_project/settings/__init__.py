@@ -47,6 +47,7 @@ settings_include(
     "tz.py",
     "storage.py",
     "celery.py",
+    "telegram.py",
     "email.py",
     "logging.py",
     "tests.py",
