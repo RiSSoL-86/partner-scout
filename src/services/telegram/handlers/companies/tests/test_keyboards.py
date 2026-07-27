@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from types import SimpleNamespace
 from typing import TYPE_CHECKING
 from uuid import uuid4
