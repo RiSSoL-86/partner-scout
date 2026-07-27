@@ -9,12 +9,12 @@ router = Router(
     prefix="scans/",
     urls=[
         path(
-            "choices",
+            "choices/",
             ScanChoicesController.as_view(),
             name="scan_choices",
         ),
         path(
-            "<uuid:scan_id>",
+            "<uuid:scan_id>/",
             ScanDetailController.as_view(),
             name="scan_detail",
         ),

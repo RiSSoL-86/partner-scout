@@ -10,7 +10,7 @@ router = Router(
     urls=[
         path("", CompanyListController.as_view(), name="company_list"),
         path(
-            "<uuid:company_id>/scans",
+            "<uuid:company_id>/scans/",
             CompanyScansController.as_view(),
             name="company_scans",
         ),
