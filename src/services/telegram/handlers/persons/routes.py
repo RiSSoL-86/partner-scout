@@ -159,6 +159,7 @@ async def show_person_mentions(
 
     keyboard = PersonMentionsKeyboard.build_person_keyboard(
         report_url=build_report_url("persons", callback_data.person_id),
+        is_private=message.chat.type == "private",
     )
     content = PersonMentionsView.build_person_message(
         keyboard=keyboard,

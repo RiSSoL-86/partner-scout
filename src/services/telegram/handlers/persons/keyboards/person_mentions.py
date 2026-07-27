@@ -15,16 +15,22 @@ class PersonMentionsKeyboard:
     """Build inline keyboards for the person card."""
 
     @staticmethod
-    def build_person_keyboard(report_url: str) -> InlineKeyboardMarkup:
+    def build_person_keyboard(
+        report_url: str,
+        is_private: bool = True,
+    ) -> InlineKeyboardMarkup:
         """Build the person card inline keyboard with a report link."""
         builder = InlineKeyboardBuilder()
 
         sizes: list[int] = []
         if report_url.startswith("https://"):
-            builder.button(
-                text="Open report 🌐",
-                web_app=WebAppInfo(url=report_url),
-            )
+            if is_private:
+                builder.button(
+                    text="Open report 🌐",
+                    web_app=WebAppInfo(url=report_url),
+                )
+            else:
+                builder.button(text="Open report 🌐", url=report_url)
             sizes.append(1)
 
         builder.button(

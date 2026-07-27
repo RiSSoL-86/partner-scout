@@ -1,7 +1,7 @@
 from unittest.mock import AsyncMock
 
 import pytest
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery, Chat, Message
 
 
 @pytest.fixture
@@ -12,6 +12,7 @@ def message() -> AsyncMock:
     detection leaves them synchronous; the awaited ones are set explicitly.
     """
     mock = AsyncMock(spec=Message)
+    mock.chat = Chat(id=1, type="private")
     mock.edit_text = AsyncMock()
     mock.answer = AsyncMock()
     mock.delete = AsyncMock()

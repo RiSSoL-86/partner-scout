@@ -103,6 +103,7 @@ async def show_company_scan(
         scan_index=scan_index,
         scans_total=scans_total,
         report_url=report_url,
+        is_private=message.chat.type == "private",
     )
     content = CompanyView.build_scan_message(
         keyboard=keyboard,

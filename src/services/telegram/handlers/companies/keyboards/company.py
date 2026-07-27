@@ -93,6 +93,7 @@ class CompanyKeyboard:
         scan_index: int,
         scans_total: int,
         report_url: str,
+        is_private: bool = True,
     ) -> InlineKeyboardMarkup:
         """Build the company scan navigation inline keyboard."""
         builder = InlineKeyboardBuilder()
@@ -125,10 +126,13 @@ class CompanyKeyboard:
             sizes.append(nav_count)
 
         if report_url.startswith("https://"):
-            builder.button(
-                text="Open report 🌐",
-                web_app=WebAppInfo(url=report_url),
-            )
+            if is_private:
+                builder.button(
+                    text="Open report 🌐",
+                    web_app=WebAppInfo(url=report_url),
+                )
+            else:
+                builder.button(text="Open report 🌐", url=report_url)
             sizes.append(1)
 
         builder.button(

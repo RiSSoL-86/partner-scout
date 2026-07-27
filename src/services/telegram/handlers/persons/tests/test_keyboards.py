@@ -147,3 +147,37 @@ def test_mentions_keyboard_hides_report_without_https_url() -> None:
 
     assert "Open report 🌐" not in labels
     assert "Back ⬅️" in labels
+
+
+def _report_button(markup: InlineKeyboardMarkup) -> object:
+    for row in markup.inline_keyboard:
+        for button in row:
+            if button.text == "Open report 🌐":
+                return button
+    raise AssertionError("report button not found")
+
+
+def test_mentions_keyboard_uses_web_app_in_private_chat() -> None:
+    """Open the report as a Web App in a private chat."""
+    button = _report_button(
+        PersonMentionsKeyboard.build_person_keyboard(
+            report_url="https://example.com/report",
+            is_private=True,
+        ),
+    )
+
+    assert button.web_app is not None
+    assert button.url is None
+
+
+def test_mentions_keyboard_uses_url_in_group_chat() -> None:
+    """Fall back to a url button outside of private chats."""
+    button = _report_button(
+        PersonMentionsKeyboard.build_person_keyboard(
+            report_url="https://example.com/report",
+            is_private=False,
+        ),
+    )
+
+    assert button.web_app is None
+    assert button.url == "https://example.com/report"
