@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
@@ -9,6 +9,22 @@ class BaseRepository[ModelT: models.Model, PrimaryKeyT]:
 
     model: type[ModelT]
 
+    def get_queryset(
+        self,
+        filters: Mapping[str, object] | None = None,
+        select_related: Sequence[str] = (),
+        order_by: Sequence[str] = (),
+    ) -> models.QuerySet[ModelT]:
+        """Build a queryset from caller-supplied filters and joins."""
+        queryset = self.model.objects.all()  # type: ignore[attr-defined]
+        if filters:
+            queryset = queryset.filter(**filters)
+        if select_related:
+            queryset = queryset.select_related(*select_related)
+        if order_by:
+            queryset = queryset.order_by(*order_by)
+        return queryset  # type: ignore[no-any-return]
+
     async def get(self, primary_key: PrimaryKeyT) -> ModelT | None:
         """Return a model instance by its primary key or None."""
         try:
@@ -18,29 +34,52 @@ class BaseRepository[ModelT: models.Model, PrimaryKeyT]:
         except ObjectDoesNotExist:
             return None
 
+    async def find_one(
+        self,
+        filters: Mapping[str, object],
+        select_related: Sequence[str] = (),
+    ) -> ModelT | None:
+        """Return the first instance matching the filters, or None."""
+        queryset = self.get_queryset(filters, select_related)
+        return await queryset.afirst()
+
+    async def list_all(
+        self,
+        filters: Mapping[str, object] | None = None,
+        select_related: Sequence[str] = (),
+        order_by: Sequence[str] = (),
+    ) -> list[ModelT]:
+        """Return every instance matching the caller-supplied query."""
+        queryset = self.get_queryset(filters, select_related, order_by)
+        return [instance async for instance in queryset]
+
     async def list(
         self,
+        filters: Mapping[str, object] | None = None,
+        select_related: Sequence[str] = (),
         order_by: Sequence[str] = ("pk",),
         offset: int = 0,
         limit: int = 20,
     ) -> tuple[list[ModelT], int]:
-        """Return a page of model instances and their total.
-
-        ``order_by`` holds the ordering fields; ordering defaults to the
-        primary key.
-        """
+        """Return a page of matching instances and their total."""
         if limit < 1:
             raise ValueError("limit must be greater than zero")
         if offset < 0:
             raise ValueError("offset must be greater than or equal to zero")
 
-        queryset = self.model.objects.all()  # type: ignore[attr-defined]
+        queryset = self.get_queryset(filters, select_related, order_by)
         total = await queryset.acount()
-        queryset = queryset.order_by(*order_by)
         page = [
             instance async for instance in queryset[offset : offset + limit]
         ]
         return page, total
+
+    async def count(
+        self,
+        filters: Mapping[str, object] | None = None,
+    ) -> int:
+        """Return how many instances match the caller-supplied filters."""
+        return await self.get_queryset(filters).acount()
 
     @staticmethod
     async def create(instance: ModelT) -> ModelT:

@@ -15,26 +15,21 @@ class ScanRepository(BaseRepository[Scan, UUID]):
         self,
         scan_id: UUID,
     ) -> tuple[Scan | None, int, int]:
-        """Return a scan by id with its position among its company scans.
-
-        Scans are ordered newest first, so the index counts how many newer
-        scans the same company has. Returns ``(None, 0, 0)`` when the scan
-        does not exist.
-        """
-        scan = (
-            await self.model.objects.select_related("company")
-            .filter(id=scan_id)
-            .afirst()
+        """Return a scan with its index among newer company scans."""
+        scan = await self.find_one(
+            filters={"id": scan_id},
+            select_related=("company",),
         )
         if scan is None:
             return None, 0, 0
 
-        company_scans = self.model.objects.filter(company_id=scan.company_id)
-        total = await company_scans.acount()
-        scan_index = await company_scans.filter(
-            created_timestamp__gt=scan.created_timestamp,
-        ).acount()
-
+        total = await self.count(filters={"company_id": scan.company_id})
+        scan_index = await self.count(
+            filters={
+                "company_id": scan.company_id,
+                "created_timestamp__gt": scan.created_timestamp,
+            },
+        )
         return scan, scan_index, total
 
     async def get_by_position(
@@ -42,19 +37,16 @@ class ScanRepository(BaseRepository[Scan, UUID]):
         company_id: UUID,
         scan_index: int,
     ) -> tuple[Scan | None, int, int]:
-        """Return a company scan by position, its index and scans total.
-
-        Scans are ordered newest first, so index ``0`` is the latest scan.
-        The requested index is clamped into the available range.
-        """
-        queryset = self.model.objects.filter(company_id=company_id)
-        total = await queryset.acount()
+        """Return a company scan by clamped index, plus index and total."""
+        total = await self.count(filters={"company_id": company_id})
         if total == 0:
             return None, 0, 0
 
         scan_index = min(max(scan_index, 0), total - 1)
-        ordered = queryset.select_related("company").order_by(
-            "-created_timestamp",
+        ordered = self.get_queryset(
+            filters={"company_id": company_id},
+            select_related=("company",),
+            order_by=("-created_timestamp",),
         )
 
         scan: Scan | None = None
@@ -76,15 +68,3 @@ class PersonSnapshotRepository(BaseRepository[PersonSnapshot, UUID]):
     """Persistence operations for person snapshots."""
 
     model = PersonSnapshot
-
-    async def list_by_scan_id(
-        self,
-        scan_id: UUID,
-    ) -> list[PersonSnapshot]:
-        """Return every person snapshot for a scan with related records."""
-        ordered = (
-            self.model.objects.filter(scan_id=scan_id)
-            .select_related("person", "source")
-            .order_by("confirmation_level", "person__normalized_name")
-        )
-        return [snapshot async for snapshot in ordered]

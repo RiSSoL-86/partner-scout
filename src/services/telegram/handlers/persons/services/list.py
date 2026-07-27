@@ -21,7 +21,7 @@ class PersonListService(BaseService):
     ) -> tuple[list[Person], int]:
         """Return a page of persons ordered by name and their total."""
         return await self.person_repository.list(
-            order_by=["normalized_name"],
+            order_by=("normalized_name",),
             offset=offset,
             limit=limit,
         )

@@ -21,8 +21,9 @@ class PersonByLetterListService(BaseService):
         limit: int = 10,
     ) -> tuple[list[Person], int]:
         """Return a page of persons by surname initial and their total."""
-        return await self.person_repository.list_by_surname_initial(
-            initial=letter,
+        return await self.person_repository.list(
+            filters={"normalized_name__istartswith": letter},
+            order_by=("normalized_name",),
             offset=offset,
             limit=limit,
         )

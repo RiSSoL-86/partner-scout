@@ -2,6 +2,11 @@ from django.urls import include
 from dmr.routing import Router, path
 
 from services.api.auth import urls as auth_urls
+from services.api.companies import urls as companies_urls
+from services.api.health import urls as health_urls
+from services.api.persons import urls as persons_urls
+from services.api.scans import urls as scans_urls
+from services.api.sources import urls as sources_urls
 from services.api.telegram import urls as telegram_urls
 from services.api.users import urls as users_urls
 
@@ -13,6 +18,41 @@ router = Router(
             include(
                 (auth_urls.router.urls, "auth"),
                 namespace="auth",
+            ),
+        ),
+        path(
+            companies_urls.router.prefix,
+            include(
+                (companies_urls.router.urls, "companies"),
+                namespace="companies",
+            ),
+        ),
+        path(
+            health_urls.router.prefix,
+            include(
+                (health_urls.router.urls, "health"),
+                namespace="health",
+            ),
+        ),
+        path(
+            persons_urls.router.prefix,
+            include(
+                (persons_urls.router.urls, "persons"),
+                namespace="persons",
+            ),
+        ),
+        path(
+            scans_urls.router.prefix,
+            include(
+                (scans_urls.router.urls, "scans"),
+                namespace="scans",
+            ),
+        ),
+        path(
+            sources_urls.router.prefix,
+            include(
+                (sources_urls.router.urls, "sources"),
+                namespace="sources",
             ),
         ),
         path(

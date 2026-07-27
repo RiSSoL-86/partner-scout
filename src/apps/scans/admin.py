@@ -30,8 +30,10 @@ class PersonSnapshotInline(admin.TabularInline):  # type: ignore[type-arg]
     extra = 0
     fields = (
         "person",
-        "source",
         "position_type",
+        "work_status",
+        "specialization",
+        "practice_area",
         "role_title",
         "organizational_unit",
         "email",
@@ -88,13 +90,13 @@ class ScanSourceAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
 class PersonSnapshotAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
     """Configure person snapshot administration."""
 
-    autocomplete_fields = ("scan", "person", "source")
+    autocomplete_fields = ("scan", "person")
     list_display = (
         "id",
         "scan",
         "person",
-        "source",
         "position_type",
+        "work_status",
         "role_title",
         "organizational_unit",
         "confirmation_level",
@@ -102,6 +104,9 @@ class PersonSnapshotAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
     list_display_links = ("id",)
     list_filter = (
         "position_type",
+        "work_status",
+        "specialization",
+        "practice_area",
         "confirmation_level",
     )
     ordering = ("-created_timestamp",)
@@ -112,9 +117,6 @@ class PersonSnapshotAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
         "person__middle_name",
         "person__last_name",
         "person__normalized_name",
-        "source__title",
-        "source__url",
-        "source__content_hash",
         "role_title",
         "organizational_unit",
         "email",

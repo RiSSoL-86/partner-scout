@@ -16,17 +16,46 @@ class ScanStatus(models.IntegerChoices):
 
 @final
 class PositionType(models.IntegerChoices):
-    """List recognized company role types."""
+    """List recognized partner-level position types."""
 
     PARTNER = 0, _("partner")
     DIRECTOR = 1, _("director")
-    OTHER = 2, _("other")
+
+
+@final
+class WorkStatus(models.IntegerChoices):
+    """List employment states in client priority order."""
+
+    UNKNOWN = 0, _("unknown")
+    FRONT_ACTIVE = 1, _("frontline active")
+    FRONT_INACTIVE = 2, _("frontline inactive")
+    BACK_OFFICE = 3, _("back office")
+    NOT_EMPLOYEE = 4, _("not employee")
+
+
+@final
+class Specialization(models.IntegerChoices):
+    """List recognized person specializations."""
+
+    UNKNOWN = 0, _("unknown")
+    INDUSTRIAL = 1, _("industrial")
+    FUNCTIONAL = 2, _("functional")
+
+
+@final
+class PracticeArea(models.IntegerChoices):
+    """List recognized organizational practice areas."""
+
+    UNKNOWN = 0, _("unknown")
+    AUDIT = 1, _("audit")
+    TAX_LEGAL = 2, _("tax and legal")
+    CONSULTING_DEALS = 3, _("consulting and deals")
 
 
 @final
 class ConfirmationLevel(models.IntegerChoices):
-    """List confidence levels for extracted scan facts."""
+    """List confidence levels for a person working at the company."""
 
     CONFIRMED = 0, _("confirmed")
-    HIGH = 1, _("high")
-    LOW = 2, _("low")
+    PROBABLE = 1, _("probable")
+    UNLIKELY = 2, _("unlikely")

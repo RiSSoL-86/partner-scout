@@ -21,7 +21,7 @@ class CompanyListService(BaseService):
     ) -> tuple[list[Company], int]:
         """Return a page of companies and their total."""
         return await self.company_repository.list(
-            order_by=["name"],
+            order_by=("name",),
             offset=offset,
             limit=limit,
         )

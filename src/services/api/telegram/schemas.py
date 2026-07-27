@@ -39,12 +39,16 @@ class PersonSnapshotResponse(CamelCaseModel):
     organizational_unit: str
     position_type: str
     position_type_value: int
+    work_status: str
+    work_status_value: int
+    specialization: str
+    specialization_value: int
+    practice_area: str
+    practice_area_value: int
     confirmation_level: str
     confirmation_level_value: int
     email: str
     phone: str
-    source_title: str
-    source_url: str
 
     @classmethod
     def build(cls, person_snapshot: PersonSnapshot) -> Self:
@@ -55,14 +59,18 @@ class PersonSnapshotResponse(CamelCaseModel):
             organizational_unit=person_snapshot.organizational_unit,
             position_type=str(person_snapshot.get_position_type_display()),
             position_type_value=person_snapshot.position_type,
+            work_status=str(person_snapshot.get_work_status_display()),
+            work_status_value=person_snapshot.work_status,
+            specialization=str(person_snapshot.get_specialization_display()),
+            specialization_value=person_snapshot.specialization,
+            practice_area=str(person_snapshot.get_practice_area_display()),
+            practice_area_value=person_snapshot.practice_area,
             confirmation_level=str(
                 person_snapshot.get_confirmation_level_display()
             ),
             confirmation_level_value=person_snapshot.confirmation_level,
             email=person_snapshot.email,
             phone=person_snapshot.phone,
-            source_title=person_snapshot.source.title,
-            source_url=person_snapshot.source.url,
         )
 
 
@@ -87,6 +95,7 @@ class CompanyScanResponse(CamelCaseModel):
         scan_index: int,
         scans_total: int,
         person_snapshots: list[PersonSnapshot],
+        sources_count: int,
     ) -> Self:
         """Assemble the report payload from fetched scan data."""
         return cls(
@@ -121,12 +130,7 @@ class CompanyScanResponse(CamelCaseModel):
                 if person_snapshot.confirmation_level
                 == ConfirmationLevel.CONFIRMED
             ),
-            sources_count=len(
-                {
-                    person_snapshot.source_id
-                    for person_snapshot in person_snapshots
-                }
-            ),
+            sources_count=sources_count,
         )
 
 

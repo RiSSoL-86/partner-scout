@@ -4,8 +4,10 @@ import pytest
 from django.db import IntegrityError, models, transaction
 from django.db.models.functions import Lower
 
+from apps.companies.models import Company
 from apps.persons.choices import MentionType
 from apps.persons.models import Person, PersonMention
+from apps.scans.models import Scan
 from apps.sources.models import Source
 
 
@@ -24,6 +26,15 @@ def create_source() -> Source:
         title="Team",
         content="Leadership profile page.",
     )
+
+
+def create_scan() -> Scan:
+    """Create a scan for person mention model tests."""
+    company = Company.objects.create(
+        name="Example Consulting",
+        website_url="https://example.com",
+    )
+    return Scan.objects.create(company=company)
 
 
 @pytest.mark.django_db
@@ -85,15 +96,15 @@ def test_normalized_name_has_case_insensitive_unique_constraint() -> None:
 
 
 def test_person_mention_has_unique_person_source_constraint() -> None:
-    """Declare uniqueness for a person mention in one source."""
+    """Declare uniqueness for a person mention in one scan source."""
     constraints = {
         constraint.name: constraint
         for constraint in PersonMention._meta.constraints
         if isinstance(constraint, models.UniqueConstraint)
     }
 
-    constraint = constraints["unique_person_source_mention"]
-    assert constraint.fields == ("person", "source")
+    constraint = constraints["unique_person_source_mention_per_scan"]
+    assert constraint.fields == ("scan", "person", "source")
 
 
 @pytest.mark.django_db
@@ -101,8 +112,10 @@ def test_person_mention_defaults() -> None:
     """Create a person mention with the default mention type."""
     person = create_person()
     source = create_source()
+    scan = create_scan()
 
     mention = PersonMention.objects.create(
+        scan=scan,
         person=person,
         source=source,
         context="Ivan Petrov is listed as a partner.",
@@ -116,14 +129,17 @@ def test_person_mention_defaults() -> None:
     assert str(mention) == f"{person} in {source}"
     assert list(person.source_mentions.all()) == [mention]
     assert list(source.person_mentions.all()) == [mention]
+    assert list(scan.person_mentions.all()) == [mention]
 
 
 @pytest.mark.django_db
 def test_person_mention_rejects_duplicate_person_source() -> None:
-    """Reject duplicate mentions for the same person and source."""
+    """Reject duplicate mentions for one person, source and scan."""
     person = create_person()
     source = create_source()
+    scan = create_scan()
     PersonMention.objects.create(
+        scan=scan,
         person=person,
         source=source,
         context="First context.",
@@ -131,6 +147,7 @@ def test_person_mention_rejects_duplicate_person_source() -> None:
 
     with pytest.raises(IntegrityError), transaction.atomic():
         PersonMention.objects.create(
+            scan=scan,
             person=person,
             source=source,
             context="Second context.",
@@ -140,9 +157,5 @@ def test_person_mention_rejects_duplicate_person_source() -> None:
 def test_mention_type_values() -> None:
     """Expose stable person mention type values."""
     assert MentionType.PROFILE == 0
-    assert MentionType.TEAM == 1
-    assert MentionType.AUTHOR == 2
-    assert MentionType.INTERVIEW == 3
-    assert MentionType.QUOTE == 4
-    assert MentionType.EVENT == 5
-    assert MentionType.OTHER == 6
+    assert MentionType.ORG_UNIT == 1
+    assert MentionType.OTHER == 2
