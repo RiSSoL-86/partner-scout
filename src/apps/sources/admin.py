@@ -3,7 +3,7 @@ from typing import final
 from django.contrib import admin
 
 from apps.persons.models import PersonMention
-from apps.scans.models import PersonSnapshot, ScanSource
+from apps.scans.models import ScanSource
 from apps.sources.models import Source
 
 
@@ -14,6 +14,7 @@ class PersonMentionInline(admin.TabularInline):  # type: ignore[type-arg]
     can_delete = False
     extra = 0
     fields = (
+        "scan",
         "person",
         "mention_type",
         "context",
@@ -39,27 +40,6 @@ class ScanSourceInline(admin.TabularInline):  # type: ignore[type-arg]
 
 
 @final
-class PersonSnapshotInline(admin.TabularInline):  # type: ignore[type-arg]
-    """Show person snapshots using this source as evidence."""
-
-    can_delete = False
-    extra = 0
-    fields = (
-        "scan",
-        "person",
-        "position_type",
-        "role_title",
-        "organizational_unit",
-        "confirmation_level",
-    )
-    max_num = 0
-    model = PersonSnapshot
-    ordering = ("-created_timestamp",)
-    readonly_fields = fields
-    show_change_link = True
-
-
-@final
 class SourceAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
     """Configure source administration."""
 
@@ -78,7 +58,6 @@ class SourceAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
     inlines = (
         ScanSourceInline,
         PersonMentionInline,
-        PersonSnapshotInline,
     )
     ordering = ("-created_timestamp",)
     readonly_fields = (

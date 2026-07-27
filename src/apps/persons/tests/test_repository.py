@@ -26,7 +26,11 @@ async def test_list_by_person_id_returns_mentions_newest_first() -> None:
     )
     newer = await create_mention(person=person, created_timestamp=now)
 
-    mentions = await PersonMentionRepository().list_by_person_id(person.id)
+    mentions = await PersonMentionRepository().list_all(
+        filters={"person_id": person.id},
+        select_related=("source",),
+        order_by=("-created_timestamp",),
+    )
 
     assert [mention.id for mention in mentions] == [newer.id, older.id]
 
@@ -37,7 +41,9 @@ async def test_list_by_person_id_excludes_other_persons() -> None:
     await create_mention(person=person)
     await create_mention(person=await create_person())
 
-    mentions = await PersonMentionRepository().list_by_person_id(person.id)
+    mentions = await PersonMentionRepository().list_all(
+        filters={"person_id": person.id},
+    )
 
     assert {mention.person_id for mention in mentions} == {person.id}
 
@@ -46,7 +52,9 @@ async def test_list_by_person_id_returns_empty_without_mentions() -> None:
     """Return an empty list when the person has no mentions."""
     person = await create_person()
 
-    mentions = await PersonMentionRepository().list_by_person_id(person.id)
+    mentions = await PersonMentionRepository().list_all(
+        filters={"person_id": person.id},
+    )
 
     assert mentions == []
 
@@ -58,7 +66,9 @@ async def test_count_by_person_id_counts_only_target_person() -> None:
     await create_mention(person=person)
     await create_mention(person=await create_person())
 
-    total = await PersonMentionRepository().count_by_person_id(person.id)
+    total = await PersonMentionRepository().count(
+        filters={"person_id": person.id},
+    )
 
     assert total == 2
 
@@ -69,8 +79,9 @@ async def test_list_by_surname_initial_filters_and_paginates() -> None:
     await create_person(last_name="Ivanova")
     await create_person(last_name="Petrov")
 
-    page, total = await PersonRepository().list_by_surname_initial(
-        initial="I",
+    page, total = await PersonRepository().list(
+        filters={"normalized_name__istartswith": "I"},
+        order_by=("normalized_name",),
         offset=0,
         limit=1,
     )

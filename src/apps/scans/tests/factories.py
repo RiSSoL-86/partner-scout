@@ -5,7 +5,6 @@ from apps.companies.tests.factories import CompanyFactory
 from apps.persons.tests.factories import PersonFactory
 from apps.scans.choices import ConfirmationLevel, PositionType, ScanStatus
 from apps.scans.models import PersonSnapshot, Scan
-from apps.sources.tests.factories import SourceFactory
 
 
 class ScanFactory(DjangoModelFactory[Scan]):
@@ -41,7 +40,6 @@ class PersonSnapshotFactory(DjangoModelFactory[PersonSnapshot]):
 
     scan = factory.SubFactory(ScanFactory)
     person = factory.SubFactory(PersonFactory)
-    source = factory.SubFactory(SourceFactory)
-    position_type = PositionType.OTHER
+    position_type = PositionType.PARTNER
     role_title = factory.Sequence(lambda n: f"Role {n}")
-    confirmation_level = ConfirmationLevel.LOW
+    confirmation_level = ConfirmationLevel.UNLIKELY

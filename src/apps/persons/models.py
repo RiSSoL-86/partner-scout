@@ -79,8 +79,14 @@ class Person(UUIDAbstractModel, TimestampedAbstractModel):
 
 @final
 class PersonMention(UUIDAbstractModel, TimestampedAbstractModel):
-    """Connect a person to a source where they were mentioned."""
+    """Connect a person to a source where a scan mentioned them."""
 
+    scan = models.ForeignKey(
+        "scans.Scan",
+        on_delete=models.CASCADE,
+        related_name="person_mentions",
+        verbose_name=_("scan"),
+    )
     person = models.ForeignKey(
         "persons.Person",
         on_delete=models.CASCADE,
@@ -98,7 +104,11 @@ class PersonMention(UUIDAbstractModel, TimestampedAbstractModel):
         choices=MentionType.choices,
         default=MentionType.OTHER,
     )
-    context = models.TextField(verbose_name=_("context"))
+    context = models.TextField(
+        verbose_name=_("context"),
+        blank=True,
+        default="",
+    )
 
     class Meta:
         """Configure person mention metadata."""
@@ -107,14 +117,18 @@ class PersonMention(UUIDAbstractModel, TimestampedAbstractModel):
         verbose_name_plural = _("persons mentions")
         constraints = [
             models.UniqueConstraint(
-                fields=("person", "source"),
-                name="unique_person_source_mention",
+                fields=("scan", "person", "source"),
+                name="unique_person_source_mention_per_scan",
             ),
         ]
         indexes = [
             models.Index(
                 fields=("person", "created_timestamp"),
                 name="mention_person_created_idx",
+            ),
+            models.Index(
+                fields=("scan", "person"),
+                name="mention_scan_person_idx",
             ),
         ]
 

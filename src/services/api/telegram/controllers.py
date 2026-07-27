@@ -95,12 +95,19 @@ class CompanyScanDetailController(Controller[PydanticSerializer]):
                 template_name="telegram/report_error.html",
             )
 
-        scan, scan_index, scans_total, person_snapshots = result
+        (
+            scan,
+            scan_index,
+            scans_total,
+            person_snapshots,
+            sources_count,
+        ) = result
         report = CompanyScanResponse.build(
             scan=scan,
             scan_index=scan_index,
             scans_total=scans_total,
             person_snapshots=person_snapshots,
+            sources_count=sources_count,
         )
         return await render_html(
             status=HTTPStatus.OK,

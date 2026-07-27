@@ -307,17 +307,13 @@
                     <dt>Статус</dt>
                     <dd>
                         {% if report.scan.status_value == 2 %}
-                            <span class="badge green">
-                                {{ report.scan.status }}</span>
+                            <span class="badge green">Завершён</span>
                         {% elif report.scan.status_value == 3 %}
-                            <span class="badge red">
-                                {{ report.scan.status }}</span>
+                            <span class="badge red">Ошибка</span>
                         {% elif report.scan.status_value == 1 %}
-                            <span class="badge amber">
-                                {{ report.scan.status }}</span>
+                            <span class="badge amber">Выполняется</span>
                         {% else %}
-                            <span class="badge gray">
-                                {{ report.scan.status }}</span>
+                            <span class="badge gray">В очереди</span>
                         {% endif %}
                     </dd>
                 </div>
@@ -375,30 +371,44 @@
                             </div>
                             <div class="badges">
                                 {% if snapshot.position_type_value == 0 %}
-                                    <span class="badge amber">
-                                        {{ snapshot.position_type }}
-                                    </span>
+                                    <span class="badge amber">Партнёр</span>
                                 {% elif snapshot.position_type_value == 1 %}
-                                    <span class="badge blue">
-                                        {{ snapshot.position_type }}
-                                    </span>
-                                {% else %}
-                                    <span class="badge gray">
-                                        {{ snapshot.position_type }}
-                                    </span>
+                                    <span class="badge blue">Директор</span>
                                 {% endif %}
                                 {% if snapshot.confirmation_level_value == 0 %}
                                     <span class="badge green">
-                                        ✓ {{ snapshot.confirmation_level }}
-                                    </span>
+                                        ✓ Подтверждён</span>
                                 {% elif snapshot.confirmation_level_value == 1 %}
-                                    <span class="badge blue">
-                                        {{ snapshot.confirmation_level }}
-                                    </span>
+                                    <span class="badge blue">Вероятен</span>
                                 {% else %}
+                                    <span class="badge gray">Маловероятен</span>
+                                {% endif %}
+                                {% if snapshot.work_status_value == 1 %}
                                     <span class="badge gray">
-                                        {{ snapshot.confirmation_level }}
-                                    </span>
+                                        Фронтлайн активен</span>
+                                {% elif snapshot.work_status_value == 2 %}
+                                    <span class="badge gray">
+                                        Фронтлайн неактивен</span>
+                                {% elif snapshot.work_status_value == 3 %}
+                                    <span class="badge gray">Бэк-офис</span>
+                                {% elif snapshot.work_status_value == 4 %}
+                                    <span class="badge gray">Не сотрудник</span>
+                                {% endif %}
+                                {% if snapshot.specialization_value == 1 %}
+                                    <span class="badge gray">
+                                        Индустриальная</span>
+                                {% elif snapshot.specialization_value == 2 %}
+                                    <span class="badge gray">
+                                        Функциональная</span>
+                                {% endif %}
+                                {% if snapshot.practice_area_value == 1 %}
+                                    <span class="badge gray">Аудит</span>
+                                {% elif snapshot.practice_area_value == 2 %}
+                                    <span class="badge gray">
+                                        Налоги и право</span>
+                                {% elif snapshot.practice_area_value == 3 %}
+                                    <span class="badge gray">
+                                        Консалтинг и сделки</span>
                                 {% endif %}
                             </div>
                             {% if snapshot.email or snapshot.phone %}
@@ -413,14 +423,6 @@
                                             <a href="tel:{{ snapshot.phone }}">
                                                 {{ snapshot.phone }}</a></div>
                                     {% endif %}
-                                </div>
-                            {% endif %}
-                            {% if snapshot.source_url %}
-                                <div class="source-line">
-                                    Источник:
-                                    <a href="{{ snapshot.source_url }}"
-                                       target="_blank" rel="noopener">
-                                        {{ snapshot.source_title }}</a>
                                 </div>
                             {% endif %}
                         </article>

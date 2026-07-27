@@ -1,10 +1,16 @@
 import pytest
-from django.core.exceptions import ValidationError
 from django.db import IntegrityError, models, transaction
 
 from apps.companies.models import Company
 from apps.persons.models import Person
-from apps.scans.choices import ConfirmationLevel, PositionType, ScanStatus
+from apps.scans.choices import (
+    ConfirmationLevel,
+    PositionType,
+    PracticeArea,
+    ScanStatus,
+    Specialization,
+    WorkStatus,
+)
 from apps.scans.models import PersonSnapshot, Scan, ScanSource
 from apps.sources.models import Source
 
@@ -134,38 +140,36 @@ def test_person_snapshot_defaults() -> None:
     """Create one extracted person state for a scan."""
     scan = Scan.objects.create(company=create_company())
     person = create_person()
-    source = create_source()
-    ScanSource.objects.create(scan=scan, source=source)
 
     snapshot = PersonSnapshot.objects.create(
         scan=scan,
         person=person,
-        source=source,
+        position_type=PositionType.PARTNER,
         role_title="Partner",
     )
 
-    assert snapshot.position_type == PositionType.OTHER
+    assert snapshot.position_type == PositionType.PARTNER
+    assert snapshot.work_status == WorkStatus.UNKNOWN
+    assert snapshot.specialization == Specialization.UNKNOWN
+    assert snapshot.practice_area == PracticeArea.UNKNOWN
     assert snapshot.organizational_unit == ""
     assert snapshot.email == ""
     assert snapshot.phone == ""
-    assert snapshot.confirmation_level == ConfirmationLevel.LOW
+    assert snapshot.confirmation_level == ConfirmationLevel.UNLIKELY
     assert str(snapshot) == f"{person} - Partner (Example Consulting)"
     assert list(scan.person_snapshots.all()) == [snapshot]
     assert list(person.snapshots.all()) == [snapshot]
-    assert list(source.person_snapshots.all()) == [snapshot]
 
 
 @pytest.mark.django_db
-def test_person_snapshot_rejects_duplicate_role_per_scan() -> None:
-    """Reject duplicate person roles inside one scan."""
+def test_person_snapshot_rejects_duplicate_person_per_scan() -> None:
+    """Reject duplicate person snapshots inside one scan."""
     scan = Scan.objects.create(company=create_company())
     person = create_person()
-    source = create_source()
-    ScanSource.objects.create(scan=scan, source=source)
     PersonSnapshot.objects.create(
         scan=scan,
         person=person,
-        source=source,
+        position_type=PositionType.PARTNER,
         role_title="Partner",
     )
 
@@ -173,26 +177,9 @@ def test_person_snapshot_rejects_duplicate_role_per_scan() -> None:
         PersonSnapshot.objects.create(
             scan=scan,
             person=person,
-            source=source,
-            role_title="Partner",
+            position_type=PositionType.DIRECTOR,
+            role_title="Director",
         )
-
-
-@pytest.mark.django_db
-def test_person_snapshot_requires_source_linked_to_scan() -> None:
-    """Reject snapshot evidence sources not found in the same scan."""
-    scan = Scan.objects.create(company=create_company())
-    snapshot = PersonSnapshot(
-        scan=scan,
-        person=create_person(),
-        source=create_source(),
-        role_title="Partner",
-    )
-
-    with pytest.raises(ValidationError) as exc_info:
-        snapshot.full_clean()
-
-    assert "source" in exc_info.value.message_dict
 
 
 def test_scan_indexes_are_declared() -> None:
@@ -219,19 +206,17 @@ def test_person_snapshot_indexes_are_declared() -> None:
     ]
 
 
-def test_person_snapshot_has_unique_role_constraint() -> None:
-    """Declare uniqueness for person roles inside one scan."""
+def test_person_snapshot_has_unique_person_constraint() -> None:
+    """Declare uniqueness for one person snapshot inside one scan."""
     constraints = {
         constraint.name: constraint
         for constraint in PersonSnapshot._meta.constraints
         if isinstance(constraint, models.UniqueConstraint)
     }
 
-    assert constraints["unique_person_snapshot_role_per_scan"].fields == (
+    assert constraints["unique_person_snapshot_per_scan"].fields == (
         "scan",
         "person",
-        "role_title",
-        "organizational_unit",
     )
 
 
@@ -254,7 +239,18 @@ def test_scan_choice_values() -> None:
     assert ScanStatus.FAILED == 3
     assert PositionType.PARTNER == 0
     assert PositionType.DIRECTOR == 1
-    assert PositionType.OTHER == 2
+    assert WorkStatus.UNKNOWN == 0
+    assert WorkStatus.FRONT_ACTIVE == 1
+    assert WorkStatus.FRONT_INACTIVE == 2
+    assert WorkStatus.BACK_OFFICE == 3
+    assert WorkStatus.NOT_EMPLOYEE == 4
+    assert Specialization.UNKNOWN == 0
+    assert Specialization.INDUSTRIAL == 1
+    assert Specialization.FUNCTIONAL == 2
+    assert PracticeArea.UNKNOWN == 0
+    assert PracticeArea.AUDIT == 1
+    assert PracticeArea.TAX_LEGAL == 2
+    assert PracticeArea.CONSULTING_DEALS == 3
     assert ConfirmationLevel.CONFIRMED == 0
-    assert ConfirmationLevel.HIGH == 1
-    assert ConfirmationLevel.LOW == 2
+    assert ConfirmationLevel.PROBABLE == 1
+    assert ConfirmationLevel.UNLIKELY == 2

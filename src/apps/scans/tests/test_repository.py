@@ -108,7 +108,7 @@ async def test_list_by_scan_id_orders_by_confirmation_then_name() -> None:
     low = await create_snapshot(
         scan=scan,
         person=await create_person(last_name="Zorin"),
-        confirmation_level=ConfirmationLevel.LOW,
+        confirmation_level=ConfirmationLevel.UNLIKELY,
     )
     confirmed = await create_snapshot(
         scan=scan,
@@ -116,6 +116,10 @@ async def test_list_by_scan_id_orders_by_confirmation_then_name() -> None:
         confirmation_level=ConfirmationLevel.CONFIRMED,
     )
 
-    snapshots = await PersonSnapshotRepository().list_by_scan_id(scan.id)
+    snapshots = await PersonSnapshotRepository().list_all(
+        filters={"scan_id": scan.id},
+        select_related=("person",),
+        order_by=("confirmation_level", "person__normalized_name"),
+    )
 
     assert [snapshot.id for snapshot in snapshots] == [confirmed.id, low.id]

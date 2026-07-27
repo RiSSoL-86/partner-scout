@@ -25,7 +25,7 @@ class PersonMentionsService(BaseService):
         if person is None:
             return None, 0
 
-        total = await self.mention_repository.count_by_person_id(
-            person_id=person_id,
+        total = await self.mention_repository.count(
+            filters={"person_id": person_id},
         )
         return person, total

@@ -4,18 +4,17 @@ from django.contrib.auth import get_user_model
 from django.test import Client
 from django.urls import reverse
 
+from apps.companies.models import Company
 from apps.persons.admin import (
     PersonAdmin,
     PersonMentionAdmin,
     SourceMentionInline,
 )
 from apps.persons.models import Person, PersonMention
+from apps.scans.models import Scan
 from apps.sources.admin import (
     PersonMentionInline,
     SourceAdmin,
-)
-from apps.sources.admin import (
-    PersonSnapshotInline as SourcePersonSnapshotInline,
 )
 from apps.sources.admin import (
     ScanSourceInline as SourceScanSourceInline,
@@ -38,6 +37,15 @@ def create_source() -> Source:
         title="Team",
         content="Leadership profile page.",
     )
+
+
+def create_scan() -> Scan:
+    """Create a scan for person mention admin tests."""
+    company = Company.objects.create(
+        name="Acme",
+        website_url="https://acme.example.com",
+    )
+    return Scan.objects.create(company=company)
 
 
 @pytest.fixture
@@ -72,6 +80,7 @@ def test_source_mention_inline_configuration() -> None:
     assert SourceMentionInline.show_change_link is True
     assert SourceMentionInline.readonly_fields == SourceMentionInline.fields
     assert SourceMentionInline.fields == (
+        "scan",
         "source",
         "mention_type",
         "context",
@@ -88,7 +97,6 @@ def test_source_admin_registers_person_mention_inline() -> None:
     assert source_admin.inlines == (
         SourceScanSourceInline,
         PersonMentionInline,
-        SourcePersonSnapshotInline,
     )
 
 
@@ -101,6 +109,7 @@ def test_source_person_mention_inline_configuration() -> None:
     assert PersonMentionInline.show_change_link is True
     assert PersonMentionInline.readonly_fields == PersonMentionInline.fields
     assert PersonMentionInline.fields == (
+        "scan",
         "person",
         "mention_type",
         "context",
@@ -114,21 +123,6 @@ def test_source_scan_source_inline_configuration() -> None:
     assert SourceScanSourceInline.readonly_fields == ("scan",)
 
 
-def test_source_person_snapshot_inline_configuration() -> None:
-    """Configure read-only inline display for source snapshots."""
-    assert SourcePersonSnapshotInline.can_delete is False
-    assert SourcePersonSnapshotInline.extra == 0
-    assert SourcePersonSnapshotInline.max_num == 0
-    assert SourcePersonSnapshotInline.readonly_fields == (
-        "scan",
-        "person",
-        "position_type",
-        "role_title",
-        "organizational_unit",
-        "confirmation_level",
-    )
-
-
 def test_person_mention_admin_registration() -> None:
     """Register person mentions as a standalone admin section."""
     person_mention_admin = admin.site._registry[PersonMention]
@@ -137,12 +131,14 @@ def test_person_mention_admin_registration() -> None:
     assert person_mention_admin.list_display == (
         "id",
         "person",
+        "scan",
         "source",
         "mention_type",
     )
     assert person_mention_admin.list_filter == ("mention_type",)
     assert person_mention_admin.search_fields == (
         "person__normalized_name",
+        "scan__company__name",
         "source__title",
         "source__url",
     )
@@ -155,7 +151,9 @@ def test_person_mention_admin_pages_are_available(
     """Open person mention admin pages as a superuser."""
     person = create_person()
     source = create_source()
+    scan = create_scan()
     mention = PersonMention.objects.create(
+        scan=scan,
         person=person,
         source=source,
         context="Ivan Petrov is listed as a partner.",
@@ -180,7 +178,9 @@ def test_person_admin_change_page_shows_mentions_inline(
     """Open person admin change page with person mention inline."""
     person = create_person()
     source = create_source()
+    scan = create_scan()
     PersonMention.objects.create(
+        scan=scan,
         person=person,
         source=source,
         context="Ivan Petrov is listed as a partner.",
@@ -205,7 +205,9 @@ def test_source_admin_change_page_shows_mentions_inline(
     """Open source admin change page with person mention inline."""
     person = create_person()
     source = create_source()
+    scan = create_scan()
     PersonMention.objects.create(
+        scan=scan,
         person=person,
         source=source,
         context="Ivan Petrov is listed as a partner.",

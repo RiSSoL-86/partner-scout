@@ -1,6 +1,5 @@
 from typing import final, override
 
-from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -8,7 +7,10 @@ from apps.common.models import TimestampedAbstractModel, UUIDAbstractModel
 from apps.scans.choices import (
     ConfirmationLevel,
     PositionType,
+    PracticeArea,
     ScanStatus,
+    Specialization,
+    WorkStatus,
 )
 
 
@@ -103,7 +105,7 @@ class ScanSource(UUIDAbstractModel, TimestampedAbstractModel):
 
 @final
 class PersonSnapshot(UUIDAbstractModel, TimestampedAbstractModel):
-    """Store one extracted person state for a company scan."""
+    """Store one partner or director state for a company scan."""
 
     scan = models.ForeignKey(
         "scans.Scan",
@@ -117,16 +119,24 @@ class PersonSnapshot(UUIDAbstractModel, TimestampedAbstractModel):
         related_name="snapshots",
         verbose_name=_("person"),
     )
-    source = models.ForeignKey(
-        "sources.Source",
-        on_delete=models.CASCADE,
-        related_name="person_snapshots",
-        verbose_name=_("source"),
-    )
     position_type = models.PositiveSmallIntegerField(
         verbose_name=_("position type"),
         choices=PositionType.choices,
-        default=PositionType.OTHER,
+    )
+    work_status = models.PositiveSmallIntegerField(
+        verbose_name=_("work status"),
+        choices=WorkStatus.choices,
+        default=WorkStatus.UNKNOWN,
+    )
+    specialization = models.PositiveSmallIntegerField(
+        verbose_name=_("specialization"),
+        choices=Specialization.choices,
+        default=Specialization.UNKNOWN,
+    )
+    practice_area = models.PositiveSmallIntegerField(
+        verbose_name=_("practice area"),
+        choices=PracticeArea.choices,
+        default=PracticeArea.UNKNOWN,
     )
     role_title = models.CharField(verbose_name=_("role title"), max_length=255)
     organizational_unit = models.CharField(
@@ -145,7 +155,7 @@ class PersonSnapshot(UUIDAbstractModel, TimestampedAbstractModel):
     confirmation_level = models.PositiveSmallIntegerField(
         verbose_name=_("confirmation level"),
         choices=ConfirmationLevel.choices,
-        default=ConfirmationLevel.LOW,
+        default=ConfirmationLevel.UNLIKELY,
     )
 
     class Meta:
@@ -155,13 +165,8 @@ class PersonSnapshot(UUIDAbstractModel, TimestampedAbstractModel):
         verbose_name_plural = _("person snapshots")
         constraints = [
             models.UniqueConstraint(
-                fields=(
-                    "scan",
-                    "person",
-                    "role_title",
-                    "organizational_unit",
-                ),
-                name="unique_person_snapshot_role_per_scan",
+                fields=("scan", "person"),
+                name="unique_person_snapshot_per_scan",
             ),
         ]
         indexes = [
@@ -170,30 +175,6 @@ class PersonSnapshot(UUIDAbstractModel, TimestampedAbstractModel):
                 name="snapshot_scan_created_idx",
             ),
         ]
-
-    @override
-    def clean(self) -> None:
-        """Validate that the evidence source belongs to the snapshot scan."""
-        super().clean()
-
-        if (
-            self.scan_id is None
-            or self.source_id is None
-            or ScanSource.objects.filter(
-                scan_id=self.scan_id,
-                source_id=self.source_id,
-            ).exists()
-        ):
-            return
-
-        raise ValidationError(
-            {
-                "source": _(
-                    "Source must be linked to the scan before it can "
-                    "support a person snapshot."
-                ),
-            }
-        )
 
     @override
     def __str__(self) -> str:

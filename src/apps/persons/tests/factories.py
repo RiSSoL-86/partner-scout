@@ -28,6 +28,7 @@ class PersonMentionFactory(DjangoModelFactory[PersonMention]):
         model = PersonMention
         skip_postgeneration_save = True
 
+    scan = factory.SubFactory("apps.scans.tests.factories.ScanFactory")
     person = factory.SubFactory(PersonFactory)
     source = factory.SubFactory(SourceFactory)
     mention_type = MentionType.PROFILE

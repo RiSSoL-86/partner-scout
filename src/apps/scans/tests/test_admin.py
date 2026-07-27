@@ -13,6 +13,7 @@ from apps.scans.admin import (
     ScanSourceAdmin,
     ScanSourceInline,
 )
+from apps.scans.choices import PositionType
 from apps.scans.models import PersonSnapshot, Scan, ScanSource
 from apps.sources.models import Source
 
@@ -81,7 +82,6 @@ def test_person_snapshot_admin_registration() -> None:
     assert person_snapshot_admin.autocomplete_fields == (
         "scan",
         "person",
-        "source",
     )
 
 
@@ -128,12 +128,10 @@ def test_person_snapshot_admin_pages_are_available(
     """Open person snapshot admin pages as a superuser."""
     scan = Scan.objects.create(company=create_company())
     person = create_person()
-    source = create_source()
-    ScanSource.objects.create(scan=scan, source=source)
     snapshot = PersonSnapshot.objects.create(
         scan=scan,
         person=person,
-        source=source,
+        position_type=PositionType.PARTNER,
         role_title="Partner",
     )
 

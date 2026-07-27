@@ -13,6 +13,7 @@ class SourceMentionInline(admin.TabularInline):  # type: ignore[type-arg]
     can_delete = False
     extra = 0
     fields = (
+        "scan",
         "source",
         "mention_type",
         "context",
@@ -34,8 +35,10 @@ class PersonSnapshotInline(admin.TabularInline):  # type: ignore[type-arg]
     extra = 0
     fields = (
         "scan",
-        "source",
         "position_type",
+        "work_status",
+        "specialization",
+        "practice_area",
         "role_title",
         "organizational_unit",
         "email",
@@ -70,6 +73,7 @@ class PersonMentionAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
     list_display = (
         "id",
         "person",
+        "scan",
         "source",
         "mention_type",
     )
@@ -79,6 +83,7 @@ class PersonMentionAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
     readonly_fields = ("id", "created_timestamp", "updated_timestamp")
     search_fields = (
         "person__normalized_name",
+        "scan__company__name",
         "source__title",
         "source__url",
     )

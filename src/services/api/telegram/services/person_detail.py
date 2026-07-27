@@ -25,7 +25,9 @@ class PersonDetailService(BaseService):
         if person is None:
             return None
 
-        mentions = await self.mention_repository.list_by_person_id(
-            person_id=person_id,
+        mentions = await self.mention_repository.list_all(
+            filters={"person_id": person_id},
+            select_related=("source",),
+            order_by=("-created_timestamp",),
         )
         return person, mentions
