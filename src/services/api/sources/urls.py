@@ -6,7 +6,7 @@ router = Router(
     prefix="sources/",
     urls=[
         path(
-            "choices",
+            "choices/",
             SourceChoicesController.as_view(),
             name="source_choices",
         ),

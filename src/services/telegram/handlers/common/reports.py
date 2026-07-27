@@ -13,4 +13,4 @@ def build_report_url(
     token = ReportTokenService.sign(resource_id)
     query = urlencode({"token": token})
     base: str = settings.SITE_URL.rstrip("/")  # type: ignore[misc]
-    return f"{base}/api/telegram/{section}/{resource_id}?{query}"
+    return f"{base}/api/telegram/{section}/{resource_id}/?{query}"
