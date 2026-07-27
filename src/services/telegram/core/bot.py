@@ -1,6 +1,7 @@
 from aiogram import Bot, Dispatcher
 from django.conf import settings
 
+from services.telegram.core.access import AccessControlMiddleware
 from services.telegram.handlers.routes import router
 
 
@@ -12,6 +13,12 @@ async def run_bot() -> None:
 
     bot = Bot(token=token)
     dispatcher = Dispatcher()
+    dispatcher.update.outer_middleware(
+        AccessControlMiddleware(
+            allowed_user_ids=frozenset(settings.TELEGRAM_ALLOWED_USER_IDS),  # type: ignore[misc]
+            allowed_chat_ids=frozenset(settings.TELEGRAM_ALLOWED_CHAT_IDS),  # type: ignore[misc]
+        ),
+    )
     dispatcher.include_router(router=router)
 
     try:
