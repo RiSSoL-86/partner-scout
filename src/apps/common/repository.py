@@ -1,7 +1,11 @@
 from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
+
+if TYPE_CHECKING:
+    from django.db.models.expressions import OrderBy
 
 
 class BaseRepository[ModelT: models.Model, PrimaryKeyT]:
@@ -13,7 +17,7 @@ class BaseRepository[ModelT: models.Model, PrimaryKeyT]:
         self,
         filters: Mapping[str, object] | None = None,
         select_related: Sequence[str] = (),
-        order_by: Sequence[str] = (),
+        order_by: Sequence[str | OrderBy] = (),
     ) -> models.QuerySet[ModelT]:
         """Build a queryset from caller-supplied filters and joins."""
         queryset = self.model.objects.all()  # type: ignore[attr-defined]
@@ -47,7 +51,7 @@ class BaseRepository[ModelT: models.Model, PrimaryKeyT]:
         self,
         filters: Mapping[str, object] | None = None,
         select_related: Sequence[str] = (),
-        order_by: Sequence[str] = (),
+        order_by: Sequence[str | OrderBy] = (),
     ) -> list[ModelT]:
         """Return every instance matching the caller-supplied query."""
         queryset = self.get_queryset(filters, select_related, order_by)
@@ -57,7 +61,7 @@ class BaseRepository[ModelT: models.Model, PrimaryKeyT]:
         self,
         filters: Mapping[str, object] | None = None,
         select_related: Sequence[str] = (),
-        order_by: Sequence[str] = ("pk",),
+        order_by: Sequence[str | OrderBy] = ("pk",),
         offset: int = 0,
         limit: int = 20,
     ) -> tuple[list[ModelT], int]:

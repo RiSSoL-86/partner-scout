@@ -1,5 +1,7 @@
 from typing import TYPE_CHECKING, final, override
 
+from django.db.models.functions import Lower
+
 from apps.common.services.base import BaseService
 from apps.companies.repository import CompanyRepository
 
@@ -24,7 +26,7 @@ class CompanyListService(BaseService):
         filters = {"name__icontains": search} if search else None
         return await self.company_repository.list(
             filters=filters,
-            order_by=("name",),
+            order_by=(Lower("name").asc(),),
             offset=offset,
             limit=limit,
         )

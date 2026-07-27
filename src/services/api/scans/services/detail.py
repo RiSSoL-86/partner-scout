@@ -36,7 +36,7 @@ class ScanDetailService(BaseService):
 
         person_snapshots = await self.person_snapshot_repository.list_all(
             filters={"scan_id": scan.id},
-            select_related=("person",),
+            select_related=("person", "scan__company"),
             order_by=(
                 "person__normalized_name",
                 "position_type",

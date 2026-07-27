@@ -34,6 +34,7 @@ class CompanyScansService(BaseService):
 
         scans, total = await self.scan_repository.list(
             filters={"company_id": company_id},
+            select_related=("company",),
             order_by=("-created_timestamp",),
             offset=offset,
             limit=limit,
