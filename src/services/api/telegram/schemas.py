@@ -1,28 +1,13 @@
 from datetime import datetime
-from math import ceil
 from typing import TYPE_CHECKING, Self, final
 from uuid import UUID
 
 from services.api.common.schemas import CamelCaseModel
+from services.api.telegram.utils import paginate
 
 if TYPE_CHECKING:
     from apps.persons.models import Person, PersonMention
     from apps.scans.models import PersonSnapshot, Scan
-
-
-def _paginate(page: int, page_size: int, total: int) -> dict[str, int | bool]:
-    """Return pagination metadata for a page of ``total`` items."""
-    total_pages = max(1, ceil(total / page_size)) if page_size else 1
-    has_prev = page > 1
-    has_next = page < total_pages
-    return {
-        "page": page,
-        "total_pages": total_pages,
-        "has_prev": has_prev,
-        "has_next": has_next,
-        "prev_page": page - 1 if has_prev else page,
-        "next_page": page + 1 if has_next else page,
-    }
 
 
 @final
@@ -170,7 +155,7 @@ class CompanyScanResponse(CamelCaseModel):
             director_count=director_count,
             confirmed_count=confirmed_count,
             sources_count=sources_count,
-            **_paginate(page, page_size, persons_total),
+            **paginate(page, page_size, persons_total),
         )
 
 
@@ -255,5 +240,5 @@ class PersonReportResponse(CamelCaseModel):
                 )
                 for snapshot in snapshots
             ],
-            **_paginate(page, page_size, scans_total),
+            **paginate(page, page_size, scans_total),
         )
