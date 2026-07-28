@@ -27,8 +27,7 @@ class ScanResponse(CamelCaseModel):
     """Full scan payload shown in the scan detail."""
 
     id: UUID
-    status: str
-    status_value: int
+    status: int
     pages_scanned: int
     report: str
     error: str
@@ -43,16 +42,11 @@ class PersonSnapshotResponse(CamelCaseModel):
     full_name: str
     role_title: str
     organizational_unit: str
-    position_type: str
-    position_type_value: int
-    work_status: str
-    work_status_value: int
-    specialization: str
-    specialization_value: int
-    practice_area: str
-    practice_area_value: int
-    confirmation_level: str
-    confirmation_level_value: int
+    position_type: int
+    work_status: int
+    specialization: int
+    practice_area: int
+    confirmation_level: int
     email: str
     phone: str
     person_sources_count: int
@@ -69,18 +63,11 @@ class PersonSnapshotResponse(CamelCaseModel):
             full_name=person_snapshot.person.normalized_name,
             role_title=person_snapshot.role_title,
             organizational_unit=person_snapshot.organizational_unit,
-            position_type=str(person_snapshot.get_position_type_display()),
-            position_type_value=person_snapshot.position_type,
-            work_status=str(person_snapshot.get_work_status_display()),
-            work_status_value=person_snapshot.work_status,
-            specialization=str(person_snapshot.get_specialization_display()),
-            specialization_value=person_snapshot.specialization,
-            practice_area=str(person_snapshot.get_practice_area_display()),
-            practice_area_value=person_snapshot.practice_area,
-            confirmation_level=str(
-                person_snapshot.get_confirmation_level_display()
-            ),
-            confirmation_level_value=person_snapshot.confirmation_level,
+            position_type=person_snapshot.position_type,
+            work_status=person_snapshot.work_status,
+            specialization=person_snapshot.specialization,
+            practice_area=person_snapshot.practice_area,
+            confirmation_level=person_snapshot.confirmation_level,
             email=person_snapshot.email,
             phone=person_snapshot.phone,
             person_sources_count=person_sources_count,
@@ -116,8 +103,7 @@ class ScanDetailResponse(CamelCaseModel):
             company=CompanyResponse.build(scan.company),
             scan=ScanResponse(
                 id=scan.id,
-                status=str(scan.get_status_display()),
-                status_value=scan.status,
+                status=scan.status,
                 pages_scanned=scan.pages_scanned,
                 report=scan.report,
                 error=scan.error,
@@ -162,8 +148,7 @@ class SourceRefResponse(CamelCaseModel):
     id: UUID
     url: str
     title: str
-    page_type: str
-    page_type_value: int
+    page_type: int
     published_at: datetime | None
 
 
@@ -172,8 +157,7 @@ class PersonMentionResponse(CamelCaseModel):
     """One source where the scan mentioned the person."""
 
     id: UUID
-    mention_type: str
-    mention_type_value: int
+    mention_type: int
     context: str
     source: SourceRefResponse
 
@@ -183,15 +167,13 @@ class PersonMentionResponse(CamelCaseModel):
         source = person_mention.source
         return cls(
             id=person_mention.id,
-            mention_type=str(person_mention.get_mention_type_display()),
-            mention_type_value=person_mention.mention_type,
+            mention_type=person_mention.mention_type,
             context=person_mention.context,
             source=SourceRefResponse(
                 id=source.id,
                 url=source.url,
                 title=source.title,
-                page_type=str(source.get_page_type_display()),
-                page_type_value=source.page_type,
+                page_type=source.page_type,
                 published_at=source.published_timestamp,
             ),
         )
@@ -219,8 +201,7 @@ class ScanPersonDetailResponse(CamelCaseModel):
             company=CompanyResponse.build(scan.company),
             scan=ScanResponse(
                 id=scan.id,
-                status=str(scan.get_status_display()),
-                status_value=scan.status,
+                status=scan.status,
                 pages_scanned=scan.pages_scanned,
                 report=scan.report,
                 error=scan.error,

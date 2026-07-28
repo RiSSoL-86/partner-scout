@@ -1,0 +1,57 @@
+<div class="source-card">
+    <div class="s-left">
+        <div class="s-icon">🔗</div>
+        <div class="s-body">
+            <div class="s-title">{{ source.title }}</div>
+            {% if source.context %}
+                <div class="s-context">{{ source.context }}</div>
+            {% endif %}
+            {% if source.url %}
+                <div class="s-open">
+                    <a href="{{ source.url }}" target="_blank" rel="noopener">
+                        Открыть источник ↗</a>
+                </div>
+            {% endif %}
+            <div class="s-pub">
+                Опубликовано:
+                {% if source.published_at %}
+                    {{ source.published_at|date:"d.m.Y, H:i" }}
+                {% else %}
+                    —
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="s-right">
+        <div class="s-attr">
+            <span class="s-attr-label">Тип упоминания</span>
+            {% if source.mention_type == 0 %}
+                <span class="badge green">Профиль</span>
+            {% elif source.mention_type == 1 %}
+                <span class="badge amber">Подразделение</span>
+            {% else %}
+                <span class="badge gray">Другое</span>
+            {% endif %}
+        </div>
+        <div class="s-attr">
+            <span class="s-attr-label">Тип страницы</span>
+            {% if source.page_type == 0 %}
+                <span class="badge blue">Профиль</span>
+            {% elif source.page_type == 1 %}
+                <span class="badge blue">Команда</span>
+            {% elif source.page_type == 2 %}
+                <span class="badge blue">Публикация</span>
+            {% elif source.page_type == 3 %}
+                <span class="badge blue">Интервью</span>
+            {% elif source.page_type == 4 %}
+                <span class="badge blue">Новости</span>
+            {% elif source.page_type == 5 %}
+                <span class="badge blue">Мероприятие</span>
+            {% elif source.page_type == 6 %}
+                <span class="badge blue">Документ</span>
+            {% else %}
+                <span class="badge gray">Другое</span>
+            {% endif %}
+        </div>
+    </div>
+</div>

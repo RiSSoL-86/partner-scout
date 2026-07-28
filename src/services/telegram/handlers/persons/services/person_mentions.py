@@ -1,31 +1,29 @@
-from typing import TYPE_CHECKING, final, override
+from typing import Any, final, override
 from uuid import UUID
 
 from apps.common.services.base import BaseService
-from apps.persons.repository import PersonMentionRepository, PersonRepository
-
-if TYPE_CHECKING:
-    from apps.persons.models import Person
+from apps.persons.repository import PersonRepository
+from apps.scans.repository import PersonSnapshotRepository
 
 
 @final
 class PersonMentionsService(BaseService):
-    """Load a person and their mentions count for Telegram handlers."""
+    """Load a person and how many scans they appear in for Telegram."""
 
     person_repository = PersonRepository()
-    mention_repository = PersonMentionRepository()
+    snapshot_repository = PersonSnapshotRepository()
 
     @override
     async def execute(
         self,
         person_id: UUID,
-    ) -> tuple[Person | None, int]:
-        """Return the person and how many mentions they have."""
+    ) -> dict[str, Any]:
+        """Return the person and how many scans they appear in."""
         person = await self.person_repository.get(person_id)
         if person is None:
-            return None, 0
+            return {"person": None, "total": 0}
 
-        total = await self.mention_repository.count(
+        total = await self.snapshot_repository.count(
             filters={"person_id": person_id},
         )
-        return person, total
+        return {"person": person, "total": total}

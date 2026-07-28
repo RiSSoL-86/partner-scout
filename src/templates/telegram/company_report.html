@@ -273,6 +273,155 @@
             line-height: 1.6;
         }
 
+        .sources {
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px dashed var(--border);
+        }
+
+        .sources > summary {
+            cursor: pointer;
+            list-style: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--link);
+            user-select: none;
+        }
+
+        .sources > summary::-webkit-details-marker { display: none; }
+
+        .sources > summary::before {
+            content: "▸";
+            font-size: 11px;
+            transition: transform 0.15s ease;
+        }
+
+        .sources[open] > summary::before { transform: rotate(90deg); }
+
+        .sources.disabled > summary {
+            color: var(--hint);
+            cursor: default;
+            pointer-events: none;
+        }
+
+        .source-card {
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: var(--surface);
+        }
+
+        .source-card .s-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .source-card .s-icon {
+            flex: 0 0 auto;
+            width: 34px;
+            height: 34px;
+            border-radius: 9px;
+            background: rgba(51, 144, 236, 0.14);
+            color: var(--link);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+        }
+
+        .source-card .s-body { min-width: 0; }
+
+        .source-card .s-title {
+            font-size: 14px;
+            font-weight: 650;
+            word-break: break-word;
+        }
+
+        .source-card .s-context {
+            margin-top: 4px;
+            font-size: 13px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .source-card .s-open { margin-top: 6px; }
+
+        .source-card .s-open a {
+            color: var(--link);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .source-card .s-pub {
+            margin-top: 6px;
+            font-size: 12px;
+            color: var(--hint);
+        }
+
+        .source-card .s-right {
+            box-sizing: border-box;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-top: 10px;
+            border-top: 1px dashed var(--border);
+        }
+
+        .source-card .s-attr {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .source-card .s-attr-label {
+            flex: 0 0 110px;
+            font-size: 12px;
+            color: var(--hint);
+        }
+
+        .pager {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .pager a, .pager span.spacer {
+            flex: 0 0 auto;
+            min-width: 84px;
+            text-align: center;
+            padding: 9px 12px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+            color: var(--accent-text);
+            background: var(--accent);
+        }
+
+        .pager span.spacer { visibility: hidden; }
+
+        .pager .page-info {
+            flex: 1 1 auto;
+            text-align: center;
+            font-size: 12px;
+            color: var(--hint);
+        }
+
         .empty {
             text-align: center;
             color: var(--hint);
@@ -318,7 +467,7 @@
         <h2>Сводка по скану</h2>
             <div class="stats">
                 <div class="stat">
-                    <div class="num">{{ report.person_snapshots|length }}</div>
+                    <div class="num">{{ report.persons_total }}</div>
                     <div class="label">Найдено людей</div>
                 </div>
                 <div class="stat">
@@ -342,11 +491,11 @@
                 <div>
                     <dt>Статус</dt>
                     <dd>
-                        {% if report.scan.status_value == 2 %}
+                        {% if report.scan.status == 2 %}
                             <span class="badge green">Завершён</span>
-                        {% elif report.scan.status_value == 3 %}
+                        {% elif report.scan.status == 3 %}
                             <span class="badge red">Ошибка</span>
-                        {% elif report.scan.status_value == 1 %}
+                        {% elif report.scan.status == 1 %}
                             <span class="badge amber">Выполняется</span>
                         {% else %}
                             <span class="badge gray">В очереди</span>
@@ -387,7 +536,7 @@
         </section>
 
         <section class="card">
-            <h2>Найденные люди ({{ report.person_snapshots|length }})</h2>
+            <h2>Найденные люди ({{ report.persons_total }})</h2>
             {% if report.person_snapshots %}
                 <div class="people">
                     {% for snapshot in report.person_snapshots %}
@@ -405,90 +554,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="attrs">
-                                <div class="attr">
-                                    <div class="attr-label">Позиция</div>
-                                    <div class="attr-value">
-                                        {% if snapshot.position_type_value == 0 %}
-                                            <span class="badge amber">
-                                                Партнёр</span>
-                                        {% elif snapshot.position_type_value == 1 %}
-                                            <span class="badge blue">
-                                                Директор</span>
-                                        {% else %}
-                                            <span class="badge gray">—</span>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="attr">
-                                    <div class="attr-label">Подтверждение</div>
-                                    <div class="attr-value">
-                                        {% if snapshot.confirmation_level_value == 0 %}
-                                            <span class="badge green">
-                                                ✓ Подтверждён</span>
-                                        {% elif snapshot.confirmation_level_value == 1 %}
-                                            <span class="badge blue">
-                                                Вероятен</span>
-                                        {% else %}
-                                            <span class="badge gray">
-                                                Маловероятен</span>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="attr">
-                                    <div class="attr-label">Статус работы</div>
-                                    <div class="attr-value">
-                                        {% if snapshot.work_status_value == 1 %}
-                                            <span class="badge green">
-                                                Фронтлайн активен</span>
-                                        {% elif snapshot.work_status_value == 2 %}
-                                            <span class="badge blue">
-                                                Фронтлайн неактивен</span>
-                                        {% elif snapshot.work_status_value == 3 %}
-                                            <span class="badge blue">
-                                                Бэк-офис</span>
-                                        {% elif snapshot.work_status_value == 4 %}
-                                            <span class="badge red">
-                                                Не сотрудник</span>
-                                        {% else %}
-                                            <span class="badge gray">
-                                                Неизвестно</span>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="attr">
-                                    <div class="attr-label">Специализация</div>
-                                    <div class="attr-value">
-                                        {% if snapshot.specialization_value == 1 %}
-                                            <span class="badge gray">
-                                                Индустриальная</span>
-                                        {% elif snapshot.specialization_value == 2 %}
-                                            <span class="badge gray">
-                                                Функциональная</span>
-                                        {% else %}
-                                            <span class="badge gray">
-                                                Неизвестно</span>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="attr">
-                                    <div class="attr-label">Практика</div>
-                                    <div class="attr-value">
-                                        {% if snapshot.practice_area_value == 1 %}
-                                            <span class="badge gray">Аудит</span>
-                                        {% elif snapshot.practice_area_value == 2 %}
-                                            <span class="badge gray">
-                                                Налоги и право</span>
-                                        {% elif snapshot.practice_area_value == 3 %}
-                                            <span class="badge gray">
-                                                Консалтинг и сделки</span>
-                                        {% else %}
-                                            <span class="badge gray">
-                                                Неизвестно</span>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
+                            {% include "telegram/_person_attrs.html" with p=snapshot %}
                             {% if snapshot.email or snapshot.phone %}
                                 <div class="contacts">
                                     {% if snapshot.email %}
@@ -503,6 +569,20 @@
                                     {% endif %}
                                 </div>
                             {% endif %}
+                            {% if snapshot.sources_count %}
+                                <details class="sources">
+                                    <summary>
+                                        Источники: {{ snapshot.sources_count }}
+                                    </summary>
+                                    {% for source in snapshot.sources %}
+                                        {% include "telegram/_source_card.html" %}
+                                    {% endfor %}
+                                </details>
+                            {% else %}
+                                <div class="sources disabled">
+                                    <summary>Источники: 0</summary>
+                                </div>
+                            {% endif %}
                         </article>
                     {% endfor %}
                 </div>
@@ -511,6 +591,25 @@
                     <div class="icon">🕵️</div>
                     <div>В этом скане не найдено ни одного человека.</div>
                 </div>
+            {% endif %}
+            {% if report.total_pages > 1 %}
+                <nav class="pager">
+                    {% if report.has_prev %}
+                        <a href="?page={{ report.prev_page }}&token={{ token }}">
+                            ← Назад</a>
+                    {% else %}
+                        <span class="spacer">←</span>
+                    {% endif %}
+                    <span class="page-info">
+                        Стр. {{ report.page }} из {{ report.total_pages }}
+                    </span>
+                    {% if report.has_next %}
+                        <a href="?page={{ report.next_page }}&token={{ token }}">
+                            Вперёд →</a>
+                    {% else %}
+                        <span class="spacer">→</span>
+                    {% endif %}
+                </nav>
             {% endif %}
         </section>
 

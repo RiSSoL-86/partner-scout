@@ -1,12 +1,9 @@
-from typing import TYPE_CHECKING, final, override
+from typing import Any, final, override
 
 from django.db.models.functions import Lower
 
 from apps.common.services.base import BaseService
 from apps.persons.repository import PersonRepository
-
-if TYPE_CHECKING:
-    from apps.persons.models import Person
 
 
 @final
@@ -21,12 +18,13 @@ class PersonListService(BaseService):
         search: str = "",
         offset: int = 0,
         limit: int = 20,
-    ) -> tuple[list[Person], int]:
+    ) -> dict[str, Any]:
         """Return a page of persons and their total."""
         filters = {"normalized_name__icontains": search} if search else None
-        return await self.person_repository.list(
+        persons, total = await self.person_repository.list(
             filters=filters,
             order_by=(Lower("normalized_name").asc(),),
             offset=offset,
             limit=limit,
         )
+        return {"persons": persons, "total": total}

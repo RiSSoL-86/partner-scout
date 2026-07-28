@@ -9,11 +9,13 @@ from apps.persons.repository import (
     PersonRepository,
 )
 from apps.persons.tests.factories import PersonFactory, PersonMentionFactory
+from apps.scans.tests.factories import ScanFactory
 
 pytestmark = pytest.mark.django_db(transaction=True)
 
 create_person = sync_to_async(PersonFactory)
 create_mention = sync_to_async(PersonMentionFactory)
+create_scan = sync_to_async(ScanFactory)
 
 
 async def test_list_by_person_id_returns_mentions_newest_first() -> None:
@@ -71,6 +73,37 @@ async def test_count_by_person_id_counts_only_target_person() -> None:
     )
 
     assert total == 2
+
+
+async def test_count_by_scan_for_person_groups_by_scan() -> None:
+    """Group a person's source counts per scan, ignoring other people."""
+    person = await create_person()
+    first_scan = await create_scan()
+    second_scan = await create_scan()
+    await create_mention(person=person, scan=first_scan)
+    await create_mention(person=person, scan=first_scan)
+    await create_mention(person=person, scan=second_scan)
+    await create_mention(person=await create_person(), scan=first_scan)
+
+    counts = await PersonMentionRepository().count_by_scan_for_person(
+        person_id=person.id,
+        scan_ids=[first_scan.id, second_scan.id],
+    )
+
+    assert counts == {first_scan.id: 2, second_scan.id: 1}
+
+
+async def test_count_by_scan_for_person_empty_scan_ids() -> None:
+    """Return an empty mapping when no scan ids are given."""
+    person = await create_person()
+    await create_mention(person=person)
+
+    counts = await PersonMentionRepository().count_by_scan_for_person(
+        person_id=person.id,
+        scan_ids=[],
+    )
+
+    assert counts == {}
 
 
 async def test_list_by_surname_initial_filters_and_paginates() -> None:

@@ -86,8 +86,8 @@ def test_list_message_handles_empty_page() -> None:
     assert "empty" in content["text"]
 
 
-def test_menu_message_shows_mentions_count() -> None:
-    """Render the person card with their name and mentions count."""
+def test_menu_message_shows_scans_count() -> None:
+    """Render the person card with their name and scans count."""
     person = SimpleNamespace(normalized_name="Yakovlev Alexander")
 
     content = PersonMentionsView.build_person_message(
@@ -97,11 +97,11 @@ def test_menu_message_shows_mentions_count() -> None:
     )
 
     assert "Yakovlev Alexander 👤:" in content["text"]
-    assert "Mentions 3 📎" in content["text"]
+    assert "Scans: 3 🔍" in content["text"]
 
 
-def test_menu_message_handles_person_without_mentions() -> None:
-    """Render a placeholder when the person has no mentions."""
+def test_menu_message_handles_person_without_scans() -> None:
+    """Render a placeholder when the person has no scans."""
     person = SimpleNamespace(normalized_name="No One")
 
     content = PersonMentionsView.build_person_message(
@@ -110,7 +110,7 @@ def test_menu_message_handles_person_without_mentions() -> None:
         total=0,
     )
 
-    assert "No mentions found" in content["text"]
+    assert "No scans found for this person" in content["text"]
 
 
 def test_list_keyboard_numbers_persons_from_offset() -> None:

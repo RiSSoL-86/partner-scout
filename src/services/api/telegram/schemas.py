@@ -1,12 +1,52 @@
 from datetime import datetime
+from math import ceil
 from typing import TYPE_CHECKING, Self, final
+from uuid import UUID
 
-from apps.scans.choices import ConfirmationLevel, PositionType
 from services.api.common.schemas import CamelCaseModel
 
 if TYPE_CHECKING:
     from apps.persons.models import Person, PersonMention
     from apps.scans.models import PersonSnapshot, Scan
+
+
+def _paginate(page: int, page_size: int, total: int) -> dict[str, int | bool]:
+    """Return pagination metadata for a page of ``total`` items."""
+    total_pages = max(1, ceil(total / page_size)) if page_size else 1
+    has_prev = page > 1
+    has_next = page < total_pages
+    return {
+        "page": page,
+        "total_pages": total_pages,
+        "has_prev": has_prev,
+        "has_next": has_next,
+        "prev_page": page - 1 if has_prev else page,
+        "next_page": page + 1 if has_next else page,
+    }
+
+
+@final
+class SourceRefResponse(CamelCaseModel):
+    """One source mention shown under a collapsible sources block."""
+
+    title: str
+    url: str
+    context: str
+    mention_type: int
+    page_type: int
+    published_at: datetime | None
+
+    @classmethod
+    def build(cls, mention: PersonMention) -> Self:
+        """Assemble a source reference from a person mention instance."""
+        return cls(
+            title=mention.source.title,
+            url=mention.source.url,
+            context=mention.context,
+            mention_type=mention.mention_type,
+            page_type=mention.source.page_type,
+            published_at=mention.source.published_timestamp,
+        )
 
 
 @final
@@ -22,8 +62,7 @@ class CompanyResponse(CamelCaseModel):
 class ScanResponse(CamelCaseModel):
     """Scan shown in the report."""
 
-    status: str
-    status_value: int
+    status: int
     pages_scanned: int
     report: str
     error: str
@@ -32,61 +71,64 @@ class ScanResponse(CamelCaseModel):
 
 @final
 class PersonSnapshotResponse(CamelCaseModel):
-    """One extracted person shown in the report."""
+    """One extracted person shown in the report with their sources."""
 
     full_name: str
     role_title: str
     organizational_unit: str
-    position_type: str
-    position_type_value: int
-    work_status: str
-    work_status_value: int
-    specialization: str
-    specialization_value: int
-    practice_area: str
-    practice_area_value: int
-    confirmation_level: str
-    confirmation_level_value: int
+    position_type: int
+    work_status: int
+    specialization: int
+    practice_area: int
+    confirmation_level: int
     email: str
     phone: str
+    sources: list[SourceRefResponse]
+    sources_count: int
 
     @classmethod
-    def build(cls, person_snapshot: PersonSnapshot) -> Self:
-        """Assemble the response from a person snapshot instance."""
+    def build(
+        cls,
+        person_snapshot: PersonSnapshot,
+        sources: list[PersonMention],
+    ) -> Self:
+        """Assemble the response from a snapshot and its source mentions."""
         return cls(
             full_name=person_snapshot.person.normalized_name,
             role_title=person_snapshot.role_title,
             organizational_unit=person_snapshot.organizational_unit,
-            position_type=str(person_snapshot.get_position_type_display()),
-            position_type_value=person_snapshot.position_type,
-            work_status=str(person_snapshot.get_work_status_display()),
-            work_status_value=person_snapshot.work_status,
-            specialization=str(person_snapshot.get_specialization_display()),
-            specialization_value=person_snapshot.specialization,
-            practice_area=str(person_snapshot.get_practice_area_display()),
-            practice_area_value=person_snapshot.practice_area,
-            confirmation_level=str(
-                person_snapshot.get_confirmation_level_display()
-            ),
-            confirmation_level_value=person_snapshot.confirmation_level,
+            position_type=person_snapshot.position_type,
+            work_status=person_snapshot.work_status,
+            specialization=person_snapshot.specialization,
+            practice_area=person_snapshot.practice_area,
+            confirmation_level=person_snapshot.confirmation_level,
             email=person_snapshot.email,
             phone=person_snapshot.phone,
+            sources=[SourceRefResponse.build(mention) for mention in sources],
+            sources_count=len(sources),
         )
 
 
 @final
 class CompanyScanResponse(CamelCaseModel):
-    """Full company scan report page payload."""
+    """Full company scan report page payload with a page of people."""
 
     company: CompanyResponse
     scan: ScanResponse
     scan_index: int
     scans_total: int
     person_snapshots: list[PersonSnapshotResponse]
+    persons_total: int
     partner_count: int
     director_count: int
     confirmed_count: int
     sources_count: int
+    page: int
+    total_pages: int
+    has_prev: bool
+    has_next: bool
+    prev_page: int
+    next_page: int
 
     @classmethod
     def build(
@@ -95,14 +137,20 @@ class CompanyScanResponse(CamelCaseModel):
         scan_index: int,
         scans_total: int,
         person_snapshots: list[PersonSnapshot],
+        snapshot_sources: dict[UUID, list[PersonMention]],
+        persons_total: int,
+        partner_count: int,
+        director_count: int,
+        confirmed_count: int,
         sources_count: int,
+        page: int,
+        page_size: int,
     ) -> Self:
-        """Assemble the report payload from fetched scan data."""
+        """Assemble the report payload from a page of scan data."""
         return cls(
             company=CompanyResponse.model_validate(scan.company),
             scan=ScanResponse(
-                status=str(scan.get_status_display()),
-                status_value=scan.status,
+                status=scan.status,
                 pages_scanned=scan.pages_scanned,
                 report=scan.report,
                 error=scan.error,
@@ -111,72 +159,101 @@ class CompanyScanResponse(CamelCaseModel):
             scan_index=scan_index,
             scans_total=scans_total,
             person_snapshots=[
-                PersonSnapshotResponse.build(person_snapshot)
+                PersonSnapshotResponse.build(
+                    person_snapshot,
+                    snapshot_sources.get(person_snapshot.person_id, []),
+                )
                 for person_snapshot in person_snapshots
             ],
-            partner_count=sum(
-                1
-                for person_snapshot in person_snapshots
-                if person_snapshot.position_type == PositionType.PARTNER
-            ),
-            director_count=sum(
-                1
-                for person_snapshot in person_snapshots
-                if person_snapshot.position_type == PositionType.DIRECTOR
-            ),
-            confirmed_count=sum(
-                1
-                for person_snapshot in person_snapshots
-                if person_snapshot.confirmation_level
-                == ConfirmationLevel.CONFIRMED
-            ),
+            persons_total=persons_total,
+            partner_count=partner_count,
+            director_count=director_count,
+            confirmed_count=confirmed_count,
             sources_count=sources_count,
+            **_paginate(page, page_size, persons_total),
         )
 
 
 @final
-class PersonMentionResponse(CamelCaseModel):
-    """One source mention shown in the person report."""
+class PersonScanEntryResponse(CamelCaseModel):
+    """One scan a person appeared in, with that scan's sources."""
 
-    source_title: str
-    source_url: str
-    mention_type: str
-    mention_type_value: int
-    context: str
-    seen_at: datetime
-
-    @classmethod
-    def build(cls, mention: PersonMention) -> Self:
-        """Assemble the response from a person mention instance."""
-        return cls(
-            source_title=mention.source.title,
-            source_url=mention.source.url,
-            mention_type=str(mention.get_mention_type_display()),
-            mention_type_value=mention.mention_type,
-            context=mention.context,
-            seen_at=mention.created_timestamp,
-        )
-
-
-@final
-class PersonReportResponse(CamelCaseModel):
-    """Full person report page payload."""
-
-    full_name: str
-    mentions: list[PersonMentionResponse]
+    scan_id: str
+    company_name: str
+    company_website: str
+    scanned_at: datetime
+    role_title: str
+    organizational_unit: str
+    position_type: int
+    confirmation_level: int
+    work_status: int
+    specialization: int
+    practice_area: int
+    email: str
+    phone: str
+    sources: list[SourceRefResponse]
     sources_count: int
 
     @classmethod
     def build(
         cls,
-        person: Person,
-        mentions: list[PersonMention],
+        snapshot: PersonSnapshot,
+        sources: list[PersonMention],
     ) -> Self:
-        """Assemble the report payload from fetched person data."""
+        """Assemble a scan entry from a snapshot and its source mentions."""
+        return cls(
+            scan_id=str(snapshot.scan_id),
+            company_name=snapshot.scan.company.name,
+            company_website=snapshot.scan.company.website_url,
+            scanned_at=snapshot.scan.created_timestamp,
+            role_title=snapshot.role_title,
+            organizational_unit=snapshot.organizational_unit,
+            position_type=snapshot.position_type,
+            confirmation_level=snapshot.confirmation_level,
+            work_status=snapshot.work_status,
+            specialization=snapshot.specialization,
+            practice_area=snapshot.practice_area,
+            email=snapshot.email,
+            phone=snapshot.phone,
+            sources=[SourceRefResponse.build(mention) for mention in sources],
+            sources_count=len(sources),
+        )
+
+
+@final
+class PersonReportResponse(CamelCaseModel):
+    """Full person report page payload: a page of the person's scans."""
+
+    full_name: str
+    scans_total: int
+    items: list[PersonScanEntryResponse]
+    page: int
+    total_pages: int
+    has_prev: bool
+    has_next: bool
+    prev_page: int
+    next_page: int
+
+    @classmethod
+    def build(
+        cls,
+        person: Person,
+        snapshots: list[PersonSnapshot],
+        scan_sources: dict[UUID, list[PersonMention]],
+        scans_total: int,
+        page: int,
+        page_size: int,
+    ) -> Self:
+        """Assemble the report payload from a page of the person's scans."""
         return cls(
             full_name=person.normalized_name,
-            mentions=[
-                PersonMentionResponse.build(mention) for mention in mentions
+            scans_total=scans_total,
+            items=[
+                PersonScanEntryResponse.build(
+                    snapshot,
+                    scan_sources.get(snapshot.scan_id, []),
+                )
+                for snapshot in snapshots
             ],
-            sources_count=len({mention.source_id for mention in mentions}),
+            **_paginate(page, page_size, scans_total),
         )

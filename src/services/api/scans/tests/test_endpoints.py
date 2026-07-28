@@ -113,7 +113,7 @@ def test_scan_person_detail_returns_scan_scoped_mentions(
     assert len(body["mentions"]) == 1
     assert body["mentions"][0]["id"] == str(mention.id)
     assert body["mentions"][0]["source"]["id"] == str(mention.source_id)
-    assert body["mentions"][0]["mentionTypeValue"] == MentionType.PROFILE
+    assert body["mentions"][0]["mentionType"] == MentionType.PROFILE
 
 
 def test_scan_person_detail_returns_not_found_when_absent(

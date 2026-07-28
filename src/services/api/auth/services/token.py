@@ -1,6 +1,6 @@
 import datetime as dt
 import uuid
-from typing import TYPE_CHECKING, Literal, final, override
+from typing import TYPE_CHECKING, Any, Literal, final, override
 
 from django.conf import settings
 from dmr.security.jwt import JWToken
@@ -16,7 +16,7 @@ class TokenService(BaseService):
     """Create JWT access and refresh tokens."""
 
     @override
-    async def execute(self, user: User) -> tuple[str, str, str]:
+    async def execute(self, user: User) -> dict[str, Any]:
         """Return the user email and a newly created JWT token pair."""
         now = dt.datetime.now(dt.UTC)
         access_token = self._create_token(
@@ -29,7 +29,11 @@ class TokenService(BaseService):
             expiration=(now + settings.JWT_REFRESH_TOKEN_LIFETIME),  # type: ignore[misc]
             token_type="refresh",
         )
-        return user.email, access_token, refresh_token
+        return {
+            "email": user.email,
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+        }
 
     @staticmethod
     def _create_token(

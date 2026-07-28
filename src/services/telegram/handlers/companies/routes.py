@@ -56,22 +56,22 @@ async def show_companies_list(
 ) -> None:
     """Show a page of the companies list from the database."""
     service = CompanyListService()
-    companies, total = await service.execute(
+    result = await service.execute(
         offset=callback_data.offset,
         limit=PAGE_SIZE,
     )
 
     keyboard = CompanyKeyboard.build_list_keyboard(
-        companies=companies,
+        companies=result["companies"],
         offset=callback_data.offset,
         page_size=PAGE_SIZE,
-        total=total,
+        total=result["total"],
     )
     content = CompanyView.build_list_message(
         keyboard=keyboard,
-        companies=companies,
+        companies=result["companies"],
         offset=callback_data.offset,
-        total=total,
+        total=result["total"],
     )
     await safe_edit_text(message, **content)
     await callback_query.answer()
@@ -86,10 +86,12 @@ async def show_company_scan(
 ) -> None:
     """Show one company scan with navigation to adjacent scans."""
     service = CompanyScanService()
-    company, scan, scan_index, scans_total = await service.execute(
+    result = await service.execute(
         company_id=UUID(callback_data.company_id),
         scan_index=callback_data.scan_index,
     )
+    company = result["company"]
+    scan = result["scan"]
     if company is None:
         await callback_query.answer("Company not found")
         return
@@ -100,8 +102,8 @@ async def show_company_scan(
 
     keyboard = CompanyKeyboard.build_scan_keyboard(
         company_id=callback_data.company_id,
-        scan_index=scan_index,
-        scans_total=scans_total,
+        scan_index=result["scan_index"],
+        scans_total=result["scans_total"],
         report_url=report_url,
         is_private=message.chat.type == "private",
     )
@@ -109,8 +111,8 @@ async def show_company_scan(
         keyboard=keyboard,
         company=company,
         scan=scan,
-        scan_index=scan_index,
-        scans_total=scans_total,
+        scan_index=result["scan_index"],
+        scans_total=result["scans_total"],
     )
     await safe_edit_text(message, **content)
     await callback_query.answer()

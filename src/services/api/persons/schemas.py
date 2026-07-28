@@ -13,7 +13,7 @@ from services.api.common.schemas import (
 
 if TYPE_CHECKING:
     from apps.persons.models import Person
-    from apps.sources.models import Source
+    from apps.scans.models import PersonSnapshot
 
 
 @final
@@ -91,37 +91,68 @@ class PersonListResponse(CamelCaseModel):
 
 
 @final
-class PersonSourceResponse(CamelCaseModel):
-    """One source document known for the person."""
+class TimelineCompanyResponse(CamelCaseModel):
+    """Company a person was seen in at one point of the timeline."""
 
     id: UUID
-    url: str
-    title: str
-    page_type: str
-    page_type_value: int
-    published_at: datetime | None
-    created_at: datetime
+    name: str
+    website_url: str
+
+
+@final
+class TimelineEntryResponse(CamelCaseModel):
+    """One dated point of a person's career timeline (one scan)."""
+
+    scan_id: UUID
+    date: datetime
+    company: TimelineCompanyResponse
+    position_type: int
+    role_title: str
+    organizational_unit: str
+    work_status: int
+    specialization: int
+    practice_area: int
+    confirmation_level: int
+    email: str
+    phone: str
+    person_sources_count: int
 
     @classmethod
-    def build(cls, source: Source) -> Self:
-        """Assemble the response from a source instance."""
+    def build(
+        cls,
+        snapshot: PersonSnapshot,
+        person_sources_count: int,
+    ) -> Self:
+        """Assemble one entry from a snapshot and its scan source count."""
+        scan = snapshot.scan
+        company = scan.company
         return cls(
-            id=source.id,
-            url=source.url,
-            title=source.title,
-            page_type=str(source.get_page_type_display()),
-            page_type_value=source.page_type,
-            published_at=source.published_timestamp,
-            created_at=source.created_timestamp,
+            scan_id=scan.id,
+            date=scan.created_timestamp,
+            company=TimelineCompanyResponse(
+                id=company.id,
+                name=company.name,
+                website_url=company.website_url,
+            ),
+            position_type=snapshot.position_type,
+            role_title=snapshot.role_title,
+            organizational_unit=snapshot.organizational_unit,
+            work_status=snapshot.work_status,
+            specialization=snapshot.specialization,
+            practice_area=snapshot.practice_area,
+            confirmation_level=snapshot.confirmation_level,
+            email=snapshot.email,
+            phone=snapshot.phone,
+            person_sources_count=person_sources_count,
         )
 
 
 @final
-class PersonSourcesResponse(CamelCaseModel):
-    """A person with a paginated page of all their known sources."""
+class PersonTimelineResponse(CamelCaseModel):
+    """A person with a paginated page of their career timeline."""
 
     person: PersonResponse
-    items: list[PersonSourceResponse]
+    items: list[TimelineEntryResponse]
     total: int
     offset: int
     limit: int
@@ -130,15 +161,18 @@ class PersonSourcesResponse(CamelCaseModel):
     def build(
         cls,
         person: Person,
-        sources: list[Source],
+        entries: list[tuple[PersonSnapshot, int]],
         total: int,
         offset: int,
         limit: int,
     ) -> Self:
-        """Assemble the response from fetched person and source data."""
+        """Assemble the response from fetched person and timeline data."""
         return cls(
             person=PersonResponse.build(person),
-            items=[PersonSourceResponse.build(source) for source in sources],
+            items=[
+                TimelineEntryResponse.build(snapshot, person_sources_count)
+                for snapshot, person_sources_count in entries
+            ],
             total=total,
             offset=offset,
             limit=limit,

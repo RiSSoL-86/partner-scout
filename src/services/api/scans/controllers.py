@@ -45,21 +45,13 @@ class ScanDetailController(Controller[PydanticSerializer]):
         if result is None:
             raise ScanNotFoundError
 
-        (
-            scan,
-            scan_index,
-            scans_total,
-            person_snapshots,
-            total_sources_count,
-            person_source_counts,
-        ) = result
         return ScanDetailResponse.build(
-            scan=scan,
-            scan_index=scan_index,
-            scans_total=scans_total,
-            person_snapshots=person_snapshots,
-            total_sources_count=total_sources_count,
-            person_source_counts=person_source_counts,
+            scan=result["scan"],
+            scan_index=result["scan_index"],
+            scans_total=result["scans_total"],
+            person_snapshots=result["person_snapshots"],
+            total_sources_count=result["total_sources_count"],
+            person_source_counts=result["person_source_counts"],
         )
 
 
@@ -89,10 +81,9 @@ class ScanPersonDetailController(Controller[PydanticSerializer]):
         if result is None:
             raise PersonNotInScanError
 
-        person_snapshot, person_mentions = result
         return ScanPersonDetailResponse.build(
-            person_snapshot=person_snapshot,
-            person_mentions=person_mentions,
+            person_snapshot=result["person_snapshot"],
+            person_mentions=result["person_mentions"],
         )
 
 

@@ -1,10 +1,7 @@
-from typing import TYPE_CHECKING, final, override
+from typing import Any, final, override
 
 from apps.common.services.base import BaseService
 from apps.persons.repository import PersonRepository
-
-if TYPE_CHECKING:
-    from apps.persons.models import Person
 
 
 @final
@@ -19,11 +16,12 @@ class PersonByLetterListService(BaseService):
         letter: str,
         offset: int = 0,
         limit: int = 10,
-    ) -> tuple[list[Person], int]:
+    ) -> dict[str, Any]:
         """Return a page of persons by surname initial and their total."""
-        return await self.person_repository.list(
+        persons, total = await self.person_repository.list(
             filters={"normalized_name__istartswith": letter},
             order_by=("normalized_name",),
             offset=offset,
             limit=limit,
         )
+        return {"persons": persons, "total": total}

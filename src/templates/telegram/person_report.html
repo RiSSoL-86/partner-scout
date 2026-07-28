@@ -89,34 +89,6 @@
             color: var(--hint);
         }
 
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-        }
-
-        .stat {
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 12px 10px;
-            text-align: center;
-        }
-
-        .stat .num {
-            font-size: 22px;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-        }
-
-        .stat .label {
-            margin-top: 2px;
-            font-size: 11px;
-            color: var(--hint);
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-        }
-
         .badge {
             display: inline-flex;
             align-items: center;
@@ -143,61 +115,248 @@
             .badge.red { color: #ff6b61; }
         }
 
-        .people { display: flex; flex-direction: column; gap: 12px; }
+        .scans { display: flex; flex-direction: column; gap: 12px; }
 
-        .person {
+        .scan {
             border: 1px solid var(--border);
             border-radius: 14px;
             padding: 14px;
             background: var(--bg);
         }
 
-        .person .top {
+        .scan .top {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
             gap: 10px;
         }
 
-        .person .name {
+        .scan .company {
             font-size: 16px;
             font-weight: 650;
             letter-spacing: -0.01em;
+            word-break: break-word;
         }
 
-        .person .role {
+        .scan .company-site {
+            margin-top: 2px;
+        }
+
+        .scan .company-site a {
+            color: var(--link);
+            text-decoration: none;
+            font-size: 13px;
+            word-break: break-all;
+        }
+
+        .scan .date {
             margin-top: 2px;
             color: var(--hint);
+            font-size: 13px;
+        }
+
+        .scan .role {
+            margin-top: 8px;
             font-size: 14px;
+            color: var(--hint);
         }
 
-        .person .badges {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            margin-top: 10px;
-        }
-
-        .person .context {
+        .scan .contacts {
             margin-top: 10px;
             padding-top: 10px;
             border-top: 1px dashed var(--border);
-            white-space: pre-wrap;
-            word-break: break-word;
-            font-size: 14px;
-            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 13px;
         }
 
-        .source-line {
+        .scan .contacts a { color: var(--link); text-decoration: none; }
+
+        .scan .contacts .k { color: var(--hint); margin-right: 6px; }
+
+        .scan .attrs {
+            margin-top: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .scan .attr {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .scan .attr .attr-label {
+            flex: 0 0 120px;
+            font-size: 12px;
+            color: var(--hint);
+            line-height: 1.3;
+        }
+
+        .scan .attr .attr-value {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        @media (max-width: 380px) {
+            .scan .attr {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 3px;
+            }
+
+            .scan .attr .attr-label { flex: none; }
+        }
+
+        .sources {
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px dashed var(--border);
+        }
+
+        .sources > summary {
+            cursor: pointer;
+            list-style: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--link);
+            user-select: none;
+        }
+
+        .sources > summary::-webkit-details-marker { display: none; }
+
+        .sources > summary::before {
+            content: "▸";
+            font-size: 11px;
+            transition: transform 0.15s ease;
+        }
+
+        .sources[open] > summary::before { transform: rotate(90deg); }
+
+        .sources.disabled > summary {
+            color: var(--hint);
+            cursor: default;
+            pointer-events: none;
+        }
+
+        .source-card {
             margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: var(--surface);
+        }
+
+        .source-card .s-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .source-card .s-icon {
+            flex: 0 0 auto;
+            width: 34px;
+            height: 34px;
+            border-radius: 9px;
+            background: rgba(51, 144, 236, 0.14);
+            color: var(--link);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+        }
+
+        .source-card .s-body { min-width: 0; }
+
+        .source-card .s-title {
+            font-size: 14px;
+            font-weight: 650;
+            word-break: break-word;
+        }
+
+        .source-card .s-context {
+            margin-top: 4px;
+            font-size: 13px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .source-card .s-open { margin-top: 6px; }
+
+        .source-card .s-open a {
+            color: var(--link);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .source-card .s-pub {
+            margin-top: 6px;
             font-size: 12px;
             color: var(--hint);
         }
 
-        .source-line a {
-            color: var(--link);
+        .source-card .s-right {
+            box-sizing: border-box;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-top: 10px;
+            border-top: 1px dashed var(--border);
+        }
+
+        .source-card .s-attr {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .source-card .s-attr-label {
+            flex: 0 0 110px;
+            font-size: 12px;
+            color: var(--hint);
+        }
+
+        .pager {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .pager a, .pager span.spacer {
+            flex: 0 0 auto;
+            min-width: 84px;
+            text-align: center;
+            padding: 9px 12px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
             text-decoration: none;
-            word-break: break-all;
+            color: var(--accent-text);
+            background: var(--accent);
+        }
+
+        .pager span.spacer { visibility: hidden; }
+
+        .pager .page-info {
+            flex: 1 1 auto;
+            text-align: center;
+            font-size: 12px;
+            color: var(--hint);
         }
 
         .empty {
@@ -222,59 +381,69 @@
         <h1>{{ report.full_name }}</h1>
         <div class="meta-row">
             <span class="badge blue">
-                Упоминаний {{ report.mentions|length }}
+                Сканов {{ report.scans_total }}
             </span>
         </div>
     </header>
 
     <section class="card">
-        <h2>Сводка</h2>
-        <div class="stats">
-            <div class="stat">
-                <div class="num">{{ report.mentions|length }}</div>
-                <div class="label">Упоминания</div>
-            </div>
-            <div class="stat">
-                <div class="num">{{ report.sources_count }}</div>
-                <div class="label">Источники</div>
-            </div>
-        </div>
-    </section>
-
-    <section class="card">
-        <h2>Упоминания ({{ report.mentions|length }})</h2>
-        {% if report.mentions %}
-            <div class="people">
-                {% for mention in report.mentions %}
-                    <article class="person">
+        <h2>История сканов ({{ report.scans_total }})</h2>
+        {% if report.items %}
+            <div class="scans">
+                {% for entry in report.items %}
+                    <article class="scan">
                         <div class="top">
                             <div>
-                                <div class="name">
-                                    {{ mention.source_title }}
+                                <div class="company">
+                                    {{ entry.company_name }}
                                 </div>
-                                <div class="role">
-                                    {{ mention.seen_at|date:"d.m.Y H:i" }}
+                                {% if entry.company_website %}
+                                    <div class="company-site">
+                                        <a href="{{ entry.company_website }}"
+                                           target="_blank" rel="noopener">
+                                            {{ entry.company_website }} ↗</a>
+                                    </div>
+                                {% endif %}
+                                <div class="date">
+                                    {{ entry.scanned_at|date:"d.m.Y H:i" }}
                                 </div>
                             </div>
                         </div>
-                        <div class="badges">
-                            {% if mention.mention_type_value == 0 %}
-                                <span class="badge blue">Профиль</span>
-                            {% elif mention.mention_type_value == 1 %}
-                                <span class="badge blue">Подразделение</span>
-                            {% else %}
-                                <span class="badge blue">Другое</span>
-                            {% endif %}
-                        </div>
-                        {% if mention.context %}
-                            <div class="context">{{ mention.context }}</div>
+                        {% if entry.role_title %}
+                            <div class="role">
+                                {{ entry.role_title }}
+                                {% if entry.organizational_unit %}
+                                    · {{ entry.organizational_unit }}
+                                {% endif %}
+                            </div>
                         {% endif %}
-                        {% if mention.source_url %}
-                            <div class="source-line">
-                                Источник:
-                                <a href="{{ mention.source_url }}"
-                                   target="_blank" rel="noopener">
-                                    {{ mention.source_url }}</a>
+                        {% include "telegram/_person_attrs.html" with p=entry %}
+                        {% if entry.email or entry.phone %}
+                            <div class="contacts">
+                                {% if entry.email %}
+                                    <div><span class="k">Email</span>
+                                        <a href="mailto:{{ entry.email }}">
+                                            {{ entry.email }}</a></div>
+                                {% endif %}
+                                {% if entry.phone %}
+                                    <div><span class="k">Телефон</span>
+                                        <a href="tel:{{ entry.phone }}">
+                                            {{ entry.phone }}</a></div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                        {% if entry.sources_count %}
+                            <details class="sources">
+                                <summary>
+                                    Источники: {{ entry.sources_count }}
+                                </summary>
+                                {% for source in entry.sources %}
+                                    {% include "telegram/_source_card.html" %}
+                                {% endfor %}
+                            </details>
+                        {% else %}
+                            <div class="sources disabled">
+                                <summary>Источники: 0</summary>
                             </div>
                         {% endif %}
                     </article>
@@ -283,8 +452,27 @@
         {% else %}
             <div class="empty">
                 <div class="icon">🕵️</div>
-                <div>Для этой персоны не найдено упоминаний.</div>
+                <div>Для этой персоны пока нет сканов.</div>
             </div>
+        {% endif %}
+        {% if report.total_pages > 1 %}
+            <nav class="pager">
+                {% if report.has_prev %}
+                    <a href="?page={{ report.prev_page }}&token={{ token }}">
+                        ← Назад</a>
+                {% else %}
+                    <span class="spacer">←</span>
+                {% endif %}
+                <span class="page-info">
+                    Стр. {{ report.page }} из {{ report.total_pages }}
+                </span>
+                {% if report.has_next %}
+                    <a href="?page={{ report.next_page }}&token={{ token }}">
+                        Вперёд →</a>
+                {% else %}
+                    <span class="spacer">→</span>
+                {% endif %}
+            </nav>
         {% endif %}
     </section>
 

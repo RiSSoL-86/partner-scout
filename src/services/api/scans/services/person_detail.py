@@ -1,13 +1,9 @@
-from typing import TYPE_CHECKING, final, override
+from typing import Any, final, override
 from uuid import UUID
 
 from apps.common.services.base import BaseService
 from apps.persons.repository import PersonMentionRepository
 from apps.scans.repository import PersonSnapshotRepository
-
-if TYPE_CHECKING:
-    from apps.persons.models import PersonMention
-    from apps.scans.models import PersonSnapshot
 
 
 @final
@@ -22,7 +18,7 @@ class ScanPersonDetailService(BaseService):
         self,
         scan_id: UUID,
         person_id: UUID,
-    ) -> tuple[PersonSnapshot, list[PersonMention]] | None:
+    ) -> dict[str, Any] | None:
         """Return the person snapshot and its scan mentions, or None."""
         person_snapshot = await self.person_snapshot_repository.find_one(
             filters={"scan_id": scan_id, "person_id": person_id},
@@ -36,4 +32,7 @@ class ScanPersonDetailService(BaseService):
             select_related=("source",),
             order_by=("mention_type", "source__title"),
         )
-        return person_snapshot, person_mentions
+        return {
+            "person_snapshot": person_snapshot,
+            "person_mentions": person_mentions,
+        }

@@ -1,10 +1,7 @@
-from typing import TYPE_CHECKING, final, override
+from typing import Any, final, override
 
 from apps.common.services.base import BaseService
 from apps.companies.repository import CompanyRepository
-
-if TYPE_CHECKING:
-    from apps.companies.models import Company
 
 
 @final
@@ -18,10 +15,11 @@ class CompanyListService(BaseService):
         self,
         offset: int = 0,
         limit: int = 5,
-    ) -> tuple[list[Company], int]:
+    ) -> dict[str, Any]:
         """Return a page of companies and their total."""
-        return await self.company_repository.list(
+        companies, total = await self.company_repository.list(
             order_by=("name",),
             offset=offset,
             limit=limit,
         )
+        return {"companies": companies, "total": total}

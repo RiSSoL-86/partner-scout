@@ -22,10 +22,13 @@ async def test_list_service_orders_by_name_and_paginates() -> None:
     await create_company(name="Alpha")
     await create_company(name="Gamma")
 
-    companies, total = await CompanyListService().execute(offset=0, limit=2)
+    result = await CompanyListService().execute(offset=0, limit=2)
 
-    assert total == 3
-    assert [company.name for company in companies] == ["Alpha", "Beta"]
+    assert result["total"] == 3
+    assert [company.name for company in result["companies"]] == [
+        "Alpha",
+        "Beta",
+    ]
 
 
 async def test_scan_service_returns_company_and_scan() -> None:
@@ -33,30 +36,28 @@ async def test_scan_service_returns_company_and_scan() -> None:
     company = await create_company()
     scan = await create_scan(company=company)
 
-    (
-        loaded_company,
-        loaded_scan,
-        index,
-        total,
-    ) = await CompanyScanService().execute(company_id=company.id, scan_index=0)
+    result = await CompanyScanService().execute(
+        company_id=company.id,
+        scan_index=0,
+    )
 
-    assert loaded_company.id == company.id
-    assert loaded_scan is not None
-    assert loaded_scan.id == scan.id
-    assert index == 0
-    assert total == 1
+    assert result["company"].id == company.id
+    assert result["scan"] is not None
+    assert result["scan"].id == scan.id
+    assert result["scan_index"] == 0
+    assert result["scans_total"] == 1
 
 
 async def test_scan_service_without_scans_returns_company_only() -> None:
     """Return the company and no scan when it has none."""
     company = await create_company()
 
-    loaded_company, scan, index, total = await CompanyScanService().execute(
+    result = await CompanyScanService().execute(
         company_id=company.id,
         scan_index=0,
     )
 
-    assert loaded_company is not None
-    assert loaded_company.id == company.id
-    assert scan is None
-    assert total == 0
+    assert result["company"] is not None
+    assert result["company"].id == company.id
+    assert result["scan"] is None
+    assert result["scans_total"] == 0

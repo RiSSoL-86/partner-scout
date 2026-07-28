@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, final, override
+from typing import Any, final, override
 from uuid import UUID
 
 from apps.common.services.base import BaseService
@@ -8,9 +8,6 @@ from apps.scans.repository import (
     ScanRepository,
     ScanSourceRepository,
 )
-
-if TYPE_CHECKING:
-    from apps.scans.models import PersonSnapshot, Scan
 
 
 @final
@@ -26,10 +23,7 @@ class ScanDetailService(BaseService):
     async def execute(
         self,
         scan_id: UUID,
-    ) -> (
-        tuple[Scan, int, int, list[PersonSnapshot], int, dict[UUID, int]]
-        | None
-    ):
+    ) -> dict[str, Any] | None:
         """Return scan, position, total, snapshots, sources and counts."""
         (
             scan,
@@ -41,7 +35,7 @@ class ScanDetailService(BaseService):
 
         person_snapshots = await self.person_snapshot_repository.list_all(
             filters={"scan_id": scan.id},
-            select_related=("person", "scan__company"),
+            select_related=("person",),
             order_by=(
                 "person__normalized_name",
                 "position_type",
@@ -57,11 +51,11 @@ class ScanDetailService(BaseService):
                 scan_id=scan.id,
             )
         )
-        return (
-            scan,
-            scan_index,
-            scans_total,
-            person_snapshots,
-            total_sources_count,
-            person_source_counts,
-        )
+        return {
+            "scan": scan,
+            "scan_index": scan_index,
+            "scans_total": scans_total,
+            "person_snapshots": person_snapshots,
+            "total_sources_count": total_sources_count,
+            "person_source_counts": person_source_counts,
+        }

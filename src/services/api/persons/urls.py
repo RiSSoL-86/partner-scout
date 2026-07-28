@@ -3,7 +3,7 @@ from dmr.routing import Router, path
 from services.api.persons.controllers import (
     PersonChoicesController,
     PersonListController,
-    PersonSourcesController,
+    PersonTimelineController,
 )
 
 router = Router(
@@ -16,9 +16,9 @@ router = Router(
             name="person_choices",
         ),
         path(
-            "<uuid:person_id>/sources/",
-            PersonSourcesController.as_view(),
-            name="person_sources",
+            "<uuid:person_id>/timeline/",
+            PersonTimelineController.as_view(),
+            name="person_timeline",
         ),
     ],
 )

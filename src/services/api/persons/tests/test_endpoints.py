@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
@@ -6,7 +7,7 @@ from django.urls import reverse
 
 from apps.persons.choices import MentionType
 from apps.persons.tests.factories import PersonFactory, PersonMentionFactory
-from apps.scans.tests.factories import ScanFactory
+from apps.scans.tests.factories import PersonSnapshotFactory, ScanFactory
 from apps.sources.tests.factories import SourceFactory
 
 if TYPE_CHECKING:
@@ -25,10 +26,10 @@ def list_url() -> str:
     return reverse("api:persons:person_list")
 
 
-def sources_url(person_id: object) -> str:
-    """Return the person sources url for a person id."""
+def timeline_url(person_id: object) -> str:
+    """Return the person timeline url for a person id."""
     return reverse(
-        "api:persons:person_sources",
+        "api:persons:person_timeline",
         kwargs={"person_id": person_id},
     )
 
@@ -94,41 +95,98 @@ def test_person_list_rejects_invalid_limit(client: Client) -> None:
     assert response.status_code == 400
 
 
-def test_person_sources_returns_all_sources(client: Client) -> None:
-    """Return the person's sources with the person header and total."""
+def test_person_timeline_returns_entries_newest_first(client: Client) -> None:
+    """Return one entry per snapshot ordered by scan date, newest first."""
     person = PersonFactory(first_name="John", last_name="Doe")
-    first_source = SourceFactory()
-    second_source = SourceFactory()
-    PersonMentionFactory(person=person, source=first_source)
-    PersonMentionFactory(person=person, source=second_source)
+    older_scan = ScanFactory(
+        created_timestamp=datetime(2026, 1, 1, tzinfo=UTC),
+    )
+    newer_scan = ScanFactory(
+        created_timestamp=datetime(2026, 6, 1, tzinfo=UTC),
+    )
+    PersonSnapshotFactory(person=person, scan=older_scan, role_title="Junior")
+    PersonSnapshotFactory(person=person, scan=newer_scan, role_title="Partner")
 
-    response = client.get(sources_url(person.id))
+    response = client.get(timeline_url(person.id))
 
     assert response.status_code == 200
     body = response.json()
     assert body["person"]["id"] == str(person.id)
     assert body["total"] == 2
-    assert len(body["items"]) == 2
+    assert [item["roleTitle"] for item in body["items"]] == [
+        "Partner",
+        "Junior",
+    ]
+    first = body["items"][0]
+    assert first["scanId"] == str(newer_scan.id)
+    assert first["company"]["id"] == str(newer_scan.company_id)
 
 
-def test_person_sources_deduplicates_across_scans(client: Client) -> None:
-    """Count a source once even when it is mentioned in several scans."""
+def test_person_timeline_keeps_repeated_snapshots(client: Client) -> None:
+    """Keep an entry per scan even when the role never changes."""
     person = PersonFactory(first_name="John", last_name="Doe")
-    source = SourceFactory()
-    PersonMentionFactory(person=person, source=source, scan=ScanFactory())
-    PersonMentionFactory(person=person, source=source, scan=ScanFactory())
+    for _ in range(3):
+        PersonSnapshotFactory(
+            person=person,
+            scan=ScanFactory(),
+            role_title="Partner",
+        )
 
-    response = client.get(sources_url(person.id))
+    response = client.get(timeline_url(person.id))
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["total"] == 3
+    assert len(body["items"]) == 3
+
+
+def test_person_timeline_counts_sources_per_scan(client: Client) -> None:
+    """Report how many sources prove the person's state in that scan."""
+    person = PersonFactory(first_name="John", last_name="Doe")
+    scan = ScanFactory()
+    PersonSnapshotFactory(person=person, scan=scan, role_title="Partner")
+    PersonMentionFactory(person=person, scan=scan, source=SourceFactory())
+    PersonMentionFactory(person=person, scan=scan, source=SourceFactory())
+
+    response = client.get(timeline_url(person.id))
+
+    assert response.status_code == 200
+    entry = response.json()["items"][0]
+    assert entry["personSourcesCount"] == 2
+    assert "sources" not in entry
+
+
+def test_person_timeline_counts_zero_without_mentions(client: Client) -> None:
+    """Show a snapshot with no mentions as a zero source count."""
+    person = PersonFactory(first_name="John", last_name="Doe")
+    PersonSnapshotFactory(person=person, scan=ScanFactory())
+
+    response = client.get(timeline_url(person.id))
 
     assert response.status_code == 200
     body = response.json()
     assert body["total"] == 1
+    assert body["items"][0]["personSourcesCount"] == 0
+
+
+def test_person_timeline_paginates(client: Client) -> None:
+    """Apply offset and limit to the timeline while reporting the total."""
+    person = PersonFactory(first_name="John", last_name="Doe")
+    for _ in range(3):
+        PersonSnapshotFactory(person=person, scan=ScanFactory())
+
+    response = client.get(
+        timeline_url(person.id), data={"offset": 1, "limit": 1}
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["total"] == 3
     assert len(body["items"]) == 1
-    assert body["items"][0]["id"] == str(source.id)
 
 
-def test_person_sources_returns_not_found(client: Client) -> None:
-    """Return 404 when listing sources for an unknown person."""
-    response = client.get(sources_url(uuid4()))
+def test_person_timeline_returns_not_found(client: Client) -> None:
+    """Return 404 when listing the timeline for an unknown person."""
+    response = client.get(timeline_url(uuid4()))
 
     assert response.status_code == 404

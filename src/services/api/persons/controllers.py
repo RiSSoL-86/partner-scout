@@ -13,10 +13,10 @@ from services.api.persons.schemas import (
     PersonListQuery,
     PersonListResponse,
     PersonResponse,
-    PersonSourcesResponse,
+    PersonTimelineResponse,
 )
 from services.api.persons.services.list import PersonListService
-from services.api.persons.services.sources import PersonSourcesService
+from services.api.persons.services.timeline import PersonTimelineService
 
 
 @final
@@ -44,22 +44,24 @@ class PersonListController(Controller[PydanticSerializer]):
     ) -> PersonListResponse:
         """Return a page of persons filtered by name."""
         service = PersonListService()
-        persons, total = await service.execute(
+        result = await service.execute(
             search=parsed_query.search,
             offset=parsed_query.offset,
             limit=parsed_query.limit,
         )
         return PersonListResponse(
-            items=[PersonResponse.build(person) for person in persons],
-            total=total,
+            items=[
+                PersonResponse.build(person) for person in result["persons"]
+            ],
+            total=result["total"],
             offset=parsed_query.offset,
             limit=parsed_query.limit,
         )
 
 
 @final
-class PersonSourcesController(Controller[PydanticSerializer]):
-    """List every source known for one person across all scans."""
+class PersonTimelineController(Controller[PydanticSerializer]):
+    """List a person's career timeline of snapshots across all scans."""
 
     auth = None
 
@@ -74,9 +76,9 @@ class PersonSourcesController(Controller[PydanticSerializer]):
         self,
         parsed_path: Path[PersonPathParams],
         parsed_query: Query[PageQuery],
-    ) -> PersonSourcesResponse:
-        """Return a page of the person's sources or a 404 error."""
-        service = PersonSourcesService()
+    ) -> PersonTimelineResponse:
+        """Return a page of the person's timeline or a 404 error."""
+        service = PersonTimelineService()
         result = await service.execute(
             person_id=parsed_path.person_id,
             offset=parsed_query.offset,
@@ -85,11 +87,10 @@ class PersonSourcesController(Controller[PydanticSerializer]):
         if result is None:
             raise PersonNotFoundError
 
-        person, sources, total = result
-        return PersonSourcesResponse.build(
-            person=person,
-            sources=sources,
-            total=total,
+        return PersonTimelineResponse.build(
+            person=result["person"],
+            entries=result["entries"],
+            total=result["total"],
             offset=parsed_query.offset,
             limit=parsed_query.limit,
         )
