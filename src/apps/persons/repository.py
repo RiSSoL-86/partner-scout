@@ -32,3 +32,15 @@ class PersonMentionRepository(BaseRepository[PersonMention, UUID]):
     """Persistence operations for person mentions."""
 
     model = PersonMention
+
+    async def count_sources_by_person_for_scan(
+        self,
+        scan_id: UUID,
+    ) -> dict[UUID, int]:
+        """Return per-person source counts found within one scan."""
+        rows = (
+            self.model.objects.filter(scan_id=scan_id)
+            .values("person_id")
+            .annotate(total=Count("pk"))
+        )
+        return {row["person_id"]: row["total"] async for row in rows}

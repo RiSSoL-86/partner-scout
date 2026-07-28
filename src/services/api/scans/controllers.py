@@ -5,10 +5,21 @@ from dmr import Controller, Path, ResponseSpec, modify
 from dmr.errors import ErrorModel
 from dmr.plugins.pydantic import PydanticSerializer
 
-from services.api.scans.exceptions import ScanNotFoundError
-from services.api.scans.path_params import ScanPathParams
-from services.api.scans.schemas import ScanChoicesResponse, ScanDetailResponse
+from services.api.scans.exceptions import (
+    PersonNotInScanError,
+    ScanNotFoundError,
+)
+from services.api.scans.path_params import (
+    ScanPathParams,
+    ScanPersonPathParams,
+)
+from services.api.scans.schemas import (
+    ScanChoicesResponse,
+    ScanDetailResponse,
+    ScanPersonDetailResponse,
+)
 from services.api.scans.services.detail import ScanDetailService
+from services.api.scans.services.person_detail import ScanPersonDetailService
 
 
 @final
@@ -39,14 +50,49 @@ class ScanDetailController(Controller[PydanticSerializer]):
             scan_index,
             scans_total,
             person_snapshots,
-            sources_count,
+            total_sources_count,
+            person_source_counts,
         ) = result
         return ScanDetailResponse.build(
             scan=scan,
             scan_index=scan_index,
             scans_total=scans_total,
             person_snapshots=person_snapshots,
-            sources_count=sources_count,
+            total_sources_count=total_sources_count,
+            person_source_counts=person_source_counts,
+        )
+
+
+@final
+class ScanPersonDetailController(Controller[PydanticSerializer]):
+    """Return one person within a scan with its source mentions."""
+
+    auth = None
+
+    @modify(
+        status_code=HTTPStatus.OK,
+        tags=["Scans"],
+        extra_responses=[
+            ResponseSpec(ErrorModel, status_code=HTTPStatus.NOT_FOUND),
+        ],
+    )
+    async def get(
+        self,
+        parsed_path: Path[ScanPersonPathParams],
+    ) -> ScanPersonDetailResponse:
+        """Return the scan person detail or a 404 when absent."""
+        service = ScanPersonDetailService()
+        result = await service.execute(
+            scan_id=parsed_path.scan_id,
+            person_id=parsed_path.person_id,
+        )
+        if result is None:
+            raise PersonNotInScanError
+
+        person_snapshot, person_mentions = result
+        return ScanPersonDetailResponse.build(
+            person_snapshot=person_snapshot,
+            person_mentions=person_mentions,
         )
 
 

@@ -25,11 +25,11 @@ erDiagram
     Company ||--o{ Scan : has
     Scan ||--o{ ScanSource : found
     Source ||--o{ ScanSource : linked_to
+    Scan ||--o{ PersonMention : recorded
     Person ||--o{ PersonMention : mentioned
     Source ||--o{ PersonMention : contains
     Scan ||--o{ PersonSnapshot : extracts
     Person ||--o{ PersonSnapshot : appears_in
-    Source ||--o{ PersonSnapshot : supports
 ```
 
 ## Model Roles
@@ -64,10 +64,10 @@ A canonical person identity shared across scans and sources.
 
 ### PersonMention
 
-The evidence-level link between a person and a source.
+The evidence-level link between a person and a source, recorded per scan.
 
-A mention means the person appeared in a source. It does not necessarily mean
-the person currently works for the scanned company.
+A mention means the scan found the person in a source. It does not necessarily
+mean the person currently works for the scanned company.
 
 Mentions drive the person side of the app: reading a person's mentions over
 time reconstructs their movement across sources, independently of any single
@@ -112,7 +112,6 @@ Company report:
 latest completed Scan for Company
 -> Scan.person_snapshots
 -> PersonSnapshot.person
--> PersonSnapshot.source
 ```
 
 Person history report:
@@ -134,5 +133,4 @@ Source evidence report:
 Source
 -> Source.person_mentions
 -> Source.scan_links
--> Source.person_snapshots
 ```
