@@ -68,22 +68,22 @@ async def show_persons_list(
 ) -> None:
     """Show a page of all persons ordered by name."""
     service = PersonListService()
-    persons, total = await service.execute(
+    result = await service.execute(
         offset=callback_data.offset,
         limit=PAGE_SIZE,
     )
 
     keyboard = PersonKeyboard.build_list_keyboard(
-        persons=persons,
+        persons=result["persons"],
         offset=callback_data.offset,
         page_size=PAGE_SIZE,
-        total=total,
+        total=result["total"],
     )
     content = PersonView.build_list_message(
         keyboard=keyboard,
-        persons=persons,
+        persons=result["persons"],
         offset=callback_data.offset,
-        total=total,
+        total=result["total"],
     )
     await safe_edit_text(message, **content)
     await callback_query.answer()
@@ -117,25 +117,25 @@ async def show_persons_by_letter(
 ) -> None:
     """Show a page of persons for one surname initial."""
     service = PersonByLetterListService()
-    persons, total = await service.execute(
+    result = await service.execute(
         letter=callback_data.letter,
         offset=callback_data.offset,
         limit=PAGE_SIZE,
     )
 
     keyboard = PersonKeyboard.build_letter_keyboard(
-        persons=persons,
+        persons=result["persons"],
         letter=callback_data.letter,
         offset=callback_data.offset,
         page_size=PAGE_SIZE,
-        total=total,
+        total=result["total"],
     )
     content = PersonView.build_letter_message(
         keyboard=keyboard,
-        persons=persons,
+        persons=result["persons"],
         letter=callback_data.letter,
         offset=callback_data.offset,
-        total=total,
+        total=result["total"],
     )
     await safe_edit_text(message, **content)
     await callback_query.answer()
@@ -150,9 +150,10 @@ async def show_person_mentions(
 ) -> None:
     """Show one person card with a link to the full report."""
     service = PersonMentionsService()
-    person, total = await service.execute(
+    result = await service.execute(
         person_id=UUID(callback_data.person_id),
     )
+    person = result["person"]
     if person is None:
         await callback_query.answer("Person not found")
         return
@@ -164,7 +165,7 @@ async def show_person_mentions(
     content = PersonMentionsView.build_person_message(
         keyboard=keyboard,
         person=person,
-        total=total,
+        total=result["total"],
     )
     await safe_edit_text(message, **content)
     await callback_query.answer()

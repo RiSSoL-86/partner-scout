@@ -18,6 +18,7 @@ from services.api.common.schemas import (
 from services.api.companies.schemas import CompanyResponse
 
 if TYPE_CHECKING:
+    from apps.persons.models import PersonMention
     from apps.scans.models import PersonSnapshot, Scan
 
 
@@ -26,8 +27,7 @@ class ScanResponse(CamelCaseModel):
     """Full scan payload shown in the scan detail."""
 
     id: UUID
-    status: str
-    status_value: int
+    status: int
     pages_scanned: int
     report: str
     error: str
@@ -42,41 +42,35 @@ class PersonSnapshotResponse(CamelCaseModel):
     full_name: str
     role_title: str
     organizational_unit: str
-    position_type: str
-    position_type_value: int
-    work_status: str
-    work_status_value: int
-    specialization: str
-    specialization_value: int
-    practice_area: str
-    practice_area_value: int
-    confirmation_level: str
-    confirmation_level_value: int
+    position_type: int
+    work_status: int
+    specialization: int
+    practice_area: int
+    confirmation_level: int
     email: str
     phone: str
+    person_sources_count: int
 
     @classmethod
-    def build(cls, person_snapshot: PersonSnapshot) -> Self:
+    def build(
+        cls,
+        person_snapshot: PersonSnapshot,
+        person_sources_count: int = 0,
+    ) -> Self:
         """Assemble the response from a person snapshot instance."""
         return cls(
             person_id=person_snapshot.person_id,
             full_name=person_snapshot.person.normalized_name,
             role_title=person_snapshot.role_title,
             organizational_unit=person_snapshot.organizational_unit,
-            position_type=str(person_snapshot.get_position_type_display()),
-            position_type_value=person_snapshot.position_type,
-            work_status=str(person_snapshot.get_work_status_display()),
-            work_status_value=person_snapshot.work_status,
-            specialization=str(person_snapshot.get_specialization_display()),
-            specialization_value=person_snapshot.specialization,
-            practice_area=str(person_snapshot.get_practice_area_display()),
-            practice_area_value=person_snapshot.practice_area,
-            confirmation_level=str(
-                person_snapshot.get_confirmation_level_display()
-            ),
-            confirmation_level_value=person_snapshot.confirmation_level,
+            position_type=person_snapshot.position_type,
+            work_status=person_snapshot.work_status,
+            specialization=person_snapshot.specialization,
+            practice_area=person_snapshot.practice_area,
+            confirmation_level=person_snapshot.confirmation_level,
             email=person_snapshot.email,
             phone=person_snapshot.phone,
+            person_sources_count=person_sources_count,
         )
 
 
@@ -92,7 +86,7 @@ class ScanDetailResponse(CamelCaseModel):
     partner_count: int
     director_count: int
     confirmed_count: int
-    sources_count: int
+    total_sources_count: int
 
     @classmethod
     def build(
@@ -101,15 +95,15 @@ class ScanDetailResponse(CamelCaseModel):
         scan_index: int,
         scans_total: int,
         person_snapshots: list[PersonSnapshot],
-        sources_count: int,
+        total_sources_count: int,
+        person_source_counts: dict[UUID, int],
     ) -> Self:
         """Assemble the detail payload from fetched scan data."""
         return cls(
             company=CompanyResponse.build(scan.company),
             scan=ScanResponse(
                 id=scan.id,
-                status=str(scan.get_status_display()),
-                status_value=scan.status,
+                status=scan.status,
                 pages_scanned=scan.pages_scanned,
                 report=scan.report,
                 error=scan.error,
@@ -118,7 +112,13 @@ class ScanDetailResponse(CamelCaseModel):
             scan_index=scan_index,
             scans_total=scans_total,
             person_snapshots=[
-                PersonSnapshotResponse.build(person_snapshot)
+                PersonSnapshotResponse.build(
+                    person_snapshot,
+                    person_sources_count=person_source_counts.get(
+                        person_snapshot.person_id,
+                        0,
+                    ),
+                )
                 for person_snapshot in person_snapshots
             ],
             partner_count=sum(
@@ -137,7 +137,85 @@ class ScanDetailResponse(CamelCaseModel):
                 if person_snapshot.confirmation_level
                 == ConfirmationLevel.CONFIRMED
             ),
-            sources_count=sources_count,
+            total_sources_count=total_sources_count,
+        )
+
+
+@final
+class SourceRefResponse(CamelCaseModel):
+    """Source metadata shown for one mention in a scan."""
+
+    id: UUID
+    url: str
+    title: str
+    page_type: int
+    published_at: datetime | None
+
+
+@final
+class PersonMentionResponse(CamelCaseModel):
+    """One source where the scan mentioned the person."""
+
+    id: UUID
+    mention_type: int
+    context: str
+    source: SourceRefResponse
+
+    @classmethod
+    def build(cls, person_mention: PersonMention) -> Self:
+        """Assemble the response from a person mention instance."""
+        source = person_mention.source
+        return cls(
+            id=person_mention.id,
+            mention_type=person_mention.mention_type,
+            context=person_mention.context,
+            source=SourceRefResponse(
+                id=source.id,
+                url=source.url,
+                title=source.title,
+                page_type=source.page_type,
+                published_at=source.published_timestamp,
+            ),
+        )
+
+
+@final
+class ScanPersonDetailResponse(CamelCaseModel):
+    """One person seen through a single scan with its source mentions."""
+
+    company: CompanyResponse
+    scan: ScanResponse
+    person_snapshot: PersonSnapshotResponse
+    mentions: list[PersonMentionResponse]
+    mentions_count: int
+
+    @classmethod
+    def build(
+        cls,
+        person_snapshot: PersonSnapshot,
+        person_mentions: list[PersonMention],
+    ) -> Self:
+        """Assemble the payload from the snapshot and its mentions."""
+        scan = person_snapshot.scan
+        return cls(
+            company=CompanyResponse.build(scan.company),
+            scan=ScanResponse(
+                id=scan.id,
+                status=scan.status,
+                pages_scanned=scan.pages_scanned,
+                report=scan.report,
+                error=scan.error,
+                created_at=scan.created_timestamp,
+            ),
+            person_snapshot=PersonSnapshotResponse.build(
+                person_snapshot,
+                person_sources_count=len(person_mentions),
+            ),
+            mentions=[
+                PersonMentionResponse.build(person_mention)
+                for person_mention in person_mentions
+            ],
+            mentions_count=len(person_mentions),
         )
 
 

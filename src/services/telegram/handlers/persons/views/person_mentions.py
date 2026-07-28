@@ -27,12 +27,12 @@ class PersonMentionsView:
         if total:
             content = as_list(
                 header,
-                as_line(f"Mentions {total} 📎"),
+                as_line(f"Scans: {total} 🔍"),
             )
         else:
             content = as_list(
                 header,
-                Text("No mentions found for this person 🤷‍♂️"),
+                Text("No scans found for this person 🤷‍♂️"),
             )
 
         return {

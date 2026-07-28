@@ -3,6 +3,7 @@ from dmr.routing import Router, path
 from services.api.scans.controllers import (
     ScanChoicesController,
     ScanDetailController,
+    ScanPersonDetailController,
 )
 
 router = Router(
@@ -17,6 +18,11 @@ router = Router(
             "<uuid:scan_id>/",
             ScanDetailController.as_view(),
             name="scan_detail",
+        ),
+        path(
+            "<uuid:scan_id>/persons/<uuid:person_id>/",
+            ScanPersonDetailController.as_view(),
+            name="scan_person_detail",
         ),
     ],
 )

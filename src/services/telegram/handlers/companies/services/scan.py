@@ -1,13 +1,9 @@
-from typing import TYPE_CHECKING, final, override
+from typing import Any, final, override
 from uuid import UUID
 
 from apps.common.services.base import BaseService
 from apps.companies.repository import CompanyRepository
 from apps.scans.repository import ScanRepository
-
-if TYPE_CHECKING:
-    from apps.companies.models import Company
-    from apps.scans.models import Scan
 
 
 @final
@@ -22,7 +18,7 @@ class CompanyScanService(BaseService):
         self,
         company_id: UUID,
         scan_index: int,
-    ) -> tuple[Company | None, Scan | None, int, int]:
+    ) -> dict[str, Any]:
         """Return the company, its scan at the position, index and total."""
         (
             scan,
@@ -33,7 +29,17 @@ class CompanyScanService(BaseService):
             scan_index=scan_index,
         )
         if scan is not None:
-            return scan.company, scan, scan_index, scans_total
+            return {
+                "company": scan.company,
+                "scan": scan,
+                "scan_index": scan_index,
+                "scans_total": scans_total,
+            }
 
         company = await self.company_repository.get(company_id)
-        return company, None, scan_index, scans_total
+        return {
+            "company": company,
+            "scan": None,
+            "scan_index": scan_index,
+            "scans_total": scans_total,
+        }

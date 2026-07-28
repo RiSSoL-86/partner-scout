@@ -1,0 +1,68 @@
+<div class="attrs">
+    <div class="attr">
+        <div class="attr-label">Позиция</div>
+        <div class="attr-value">
+            {% if p.position_type == 0 %}
+                <span class="badge amber">Партнёр</span>
+            {% elif p.position_type == 1 %}
+                <span class="badge blue">Директор</span>
+            {% else %}
+                <span class="badge gray">—</span>
+            {% endif %}
+        </div>
+    </div>
+    <div class="attr">
+        <div class="attr-label">Подтверждение</div>
+        <div class="attr-value">
+            {% if p.confirmation_level == 0 %}
+                <span class="badge green">✓ Подтверждён</span>
+            {% elif p.confirmation_level == 1 %}
+                <span class="badge blue">Вероятен</span>
+            {% else %}
+                <span class="badge gray">Маловероятен</span>
+            {% endif %}
+        </div>
+    </div>
+    <div class="attr">
+        <div class="attr-label">Статус работы</div>
+        <div class="attr-value">
+            {% if p.work_status == 1 %}
+                <span class="badge green">Фронтлайн активен</span>
+            {% elif p.work_status == 2 %}
+                <span class="badge blue">Фронтлайн неактивен</span>
+            {% elif p.work_status == 3 %}
+                <span class="badge blue">Бэк-офис</span>
+            {% elif p.work_status == 4 %}
+                <span class="badge red">Не сотрудник</span>
+            {% else %}
+                <span class="badge gray">Неизвестно</span>
+            {% endif %}
+        </div>
+    </div>
+    <div class="attr">
+        <div class="attr-label">Специализация</div>
+        <div class="attr-value">
+            {% if p.specialization == 1 %}
+                <span class="badge gray">Индустриальная</span>
+            {% elif p.specialization == 2 %}
+                <span class="badge gray">Функциональная</span>
+            {% else %}
+                <span class="badge gray">Неизвестно</span>
+            {% endif %}
+        </div>
+    </div>
+    <div class="attr">
+        <div class="attr-label">Практика</div>
+        <div class="attr-value">
+            {% if p.practice_area == 1 %}
+                <span class="badge gray">Аудит</span>
+            {% elif p.practice_area == 2 %}
+                <span class="badge gray">Налоги и право</span>
+            {% elif p.practice_area == 3 %}
+                <span class="badge gray">Консалтинг и сделки</span>
+            {% else %}
+                <span class="badge gray">Неизвестно</span>
+            {% endif %}
+        </div>
+    </div>
+</div>

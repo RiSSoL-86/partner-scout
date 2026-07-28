@@ -67,8 +67,7 @@ class ScanSummaryResponse(CamelCaseModel):
     """Scan shown in a company's scan list."""
 
     id: UUID
-    status: str
-    status_value: int
+    status: int
     pages_scanned: int
     has_error: bool
     created_at: datetime
@@ -78,8 +77,7 @@ class ScanSummaryResponse(CamelCaseModel):
         """Assemble the summary from a scan instance."""
         return cls(
             id=scan.id,
-            status=str(scan.get_status_display()),
-            status_value=scan.status,
+            status=scan.status,
             pages_scanned=scan.pages_scanned,
             has_error=bool(scan.error),
             created_at=scan.created_timestamp,

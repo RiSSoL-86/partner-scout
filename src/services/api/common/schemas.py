@@ -1,6 +1,12 @@
 from typing import TYPE_CHECKING, final
 
-from pydantic import AliasGenerator, BaseModel, ConfigDict, alias_generators
+from pydantic import (
+    AliasGenerator,
+    BaseModel,
+    ConfigDict,
+    Field,
+    alias_generators,
+)
 
 if TYPE_CHECKING:
     from django.db.models import IntegerChoices
@@ -25,6 +31,7 @@ class ReportQuery(BaseModel):
     """Query parameters carrying the signed report link token."""
 
     token: str
+    page: int = Field(default=1, ge=1)
 
 
 @final

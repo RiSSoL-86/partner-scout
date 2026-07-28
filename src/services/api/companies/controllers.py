@@ -31,14 +31,17 @@ class CompanyListController(Controller[PydanticSerializer]):
     ) -> CompanyListResponse:
         """Return a page of companies filtered by name."""
         service = CompanyListService()
-        companies, total = await service.execute(
+        result = await service.execute(
             search=parsed_query.search,
             offset=parsed_query.offset,
             limit=parsed_query.limit,
         )
         return CompanyListResponse(
-            items=[CompanyResponse.build(company) for company in companies],
-            total=total,
+            items=[
+                CompanyResponse.build(company)
+                for company in result["companies"]
+            ],
+            total=result["total"],
             offset=parsed_query.offset,
             limit=parsed_query.limit,
         )
@@ -72,11 +75,10 @@ class CompanyScansController(Controller[PydanticSerializer]):
         if result is None:
             raise CompanyNotFoundError
 
-        company, scans, total = result
         return CompanyScansResponse.build(
-            company=company,
-            scans=scans,
-            total=total,
+            company=result["company"],
+            scans=result["scans"],
+            total=result["total"],
             offset=parsed_query.offset,
             limit=parsed_query.limit,
         )

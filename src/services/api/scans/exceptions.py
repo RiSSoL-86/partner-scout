@@ -12,3 +12,11 @@ class ScanNotFoundError(BaseAPIError):
 
     message = _("Scan not found.")
     status_code = HTTPStatus.NOT_FOUND
+
+
+@final
+class PersonNotInScanError(BaseAPIError):
+    """Report a request for a person absent from the given scan."""
+
+    message = _("Person not found in this scan.")
+    status_code = HTTPStatus.NOT_FOUND

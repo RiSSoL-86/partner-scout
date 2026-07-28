@@ -78,13 +78,11 @@ class SignInController(
     async def make_api_response(self) -> AuthResponse:
         """Return a new access and refresh token pair."""
         service = TokenService()
-        email, access_token, refresh_token = await service.execute(
-            user=self.request.user,
-        )
+        result = await service.execute(user=self.request.user)
         return AuthResponse(
-            email=email,
-            access_token=access_token,
-            refresh_token=refresh_token,
+            email=result["email"],
+            access_token=result["access_token"],
+            refresh_token=result["refresh_token"],
         )
 
 
@@ -119,11 +117,9 @@ class RefreshController(
     async def make_api_response(self) -> RefreshResponse:
         """Return a renewed access and refresh token pair."""
         service = TokenService()
-        email, access_token, refresh_token = await service.execute(
-            user=self.request.user,
-        )
+        result = await service.execute(user=self.request.user)
         return RefreshResponse(
-            email=email,
-            access_token=access_token,
-            refresh_token=refresh_token,
+            email=result["email"],
+            access_token=result["access_token"],
+            refresh_token=result["refresh_token"],
         )

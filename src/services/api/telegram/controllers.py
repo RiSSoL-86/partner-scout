@@ -1,6 +1,7 @@
 from http import HTTPStatus
 from typing import final
 
+from django.conf import settings
 from django.http import HttpResponse
 from dmr import (
     Controller,
@@ -29,6 +30,8 @@ from services.api.telegram.services.person_detail import (
     PersonDetailService,
 )
 from services.api.telegram.utils import render_html
+
+PAGE_SIZE: int = settings.TELEGRAM_PAGE_SIZE  # type: ignore[misc]
 
 
 @final
@@ -81,7 +84,11 @@ class CompanyScanDetailController(Controller[PydanticSerializer]):
             )
 
         service = CompanyScanDetailService()
-        result = await service.execute(scan_id=parsed_path.scan_id)
+        result = await service.execute(
+            scan_id=parsed_path.scan_id,
+            offset=(parsed_query.page - 1) * PAGE_SIZE,
+            limit=PAGE_SIZE,
+        )
         if result is None:
             status = HTTPStatus.NOT_FOUND
             context = {
@@ -95,23 +102,26 @@ class CompanyScanDetailController(Controller[PydanticSerializer]):
                 template_name="telegram/report_error.html",
             )
 
-        (
-            scan,
-            scan_index,
-            scans_total,
-            person_snapshots,
-            sources_count,
-        ) = result
         report = CompanyScanResponse.build(
-            scan=scan,
-            scan_index=scan_index,
-            scans_total=scans_total,
-            person_snapshots=person_snapshots,
-            sources_count=sources_count,
+            scan=result["scan"],
+            scan_index=result["scan_index"],
+            scans_total=result["scans_total"],
+            person_snapshots=result["person_snapshots"],
+            snapshot_sources=result["snapshot_sources"],
+            persons_total=result["persons_total"],
+            partner_count=result["partner_count"],
+            director_count=result["director_count"],
+            confirmed_count=result["confirmed_count"],
+            sources_count=result["sources_count"],
+            page=parsed_query.page,
+            page_size=PAGE_SIZE,
         )
         return await render_html(
             status=HTTPStatus.OK,
-            context={"report": report},
+            context={
+                "report": report,
+                "token": ReportTokenService.sign(scan_id),
+            },
             template_name="telegram/company_report.html",
         )
 
@@ -166,7 +176,11 @@ class PersonDetailController(Controller[PydanticSerializer]):
             )
 
         service = PersonDetailService()
-        result = await service.execute(person_id=parsed_path.person_id)
+        result = await service.execute(
+            person_id=parsed_path.person_id,
+            offset=(parsed_query.page - 1) * PAGE_SIZE,
+            limit=PAGE_SIZE,
+        )
         if result is None:
             status = HTTPStatus.NOT_FOUND
             context = {
@@ -180,10 +194,19 @@ class PersonDetailController(Controller[PydanticSerializer]):
                 template_name="telegram/report_error.html",
             )
 
-        person, mentions = result
-        report = PersonReportResponse.build(person=person, mentions=mentions)
+        report = PersonReportResponse.build(
+            person=result["person"],
+            snapshots=result["snapshots"],
+            scan_sources=result["scan_sources"],
+            scans_total=result["scans_total"],
+            page=parsed_query.page,
+            page_size=PAGE_SIZE,
+        )
         return await render_html(
             status=HTTPStatus.OK,
-            context={"report": report},
+            context={
+                "report": report,
+                "token": ReportTokenService.sign(person_id),
+            },
             template_name="telegram/person_report.html",
         )
