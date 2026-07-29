@@ -33,6 +33,16 @@ DEBUG: bool
 MIDDLEWARE: list[str]
 PROJECT_NAME: str
 TIME_ZONE: str
+OPENAI_API_KEY: str
+CRAWLER_MAX_PAGES: int
+CRAWLER_MAX_DEPTH: int
+CRAWLER_PAGE_TIMEOUT: int
+CRAWLER_CONCURRENCY: int
+CRAWLER_HEADLESS: bool
+CRAWLER_SCORE_THRESHOLD: float
+CRAWLER_MAX_CONTENT_CHARS: int
+CRAWLER_LLM_MODEL: str
+CRAWLER_LLM_TEMPERATURE: float
 
 settings_include(
     "common.py",
@@ -52,5 +62,7 @@ settings_include(
     "logging.py",
     "tests.py",
     "sentry.py",
+    "open_ai.py",
+    "scanner.py",
     optional("local_settings.py"),
 )

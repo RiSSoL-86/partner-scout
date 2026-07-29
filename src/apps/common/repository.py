@@ -2,7 +2,7 @@ from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING
 
 from django.core.exceptions import ObjectDoesNotExist
-from django.db import models
+from django.db import IntegrityError, models
 
 if TYPE_CHECKING:
     from django.db.models.expressions import OrderBy
@@ -90,6 +90,29 @@ class BaseRepository[ModelT: models.Model, PrimaryKeyT]:
         """Persist a new model instance."""
         await instance.asave(force_insert=True)
         return instance
+
+    async def get_or_create(
+        self,
+        filters: Mapping[str, object],
+        instance: ModelT,
+    ) -> ModelT:
+        """Return the row matching the filters or persist the given one.
+
+        A concurrent insert that trips a unique constraint is absorbed:
+        the method re-reads and returns the winning row instead of
+        raising. The prebuilt instance is discarded when a match exists.
+        """
+        stored = await self.find_one(filters)
+        if stored is not None:
+            return stored
+
+        try:
+            return await self.create(instance)
+        except IntegrityError:
+            stored = await self.find_one(filters)
+            if stored is None:
+                raise
+            return stored
 
     async def update(
         self,
