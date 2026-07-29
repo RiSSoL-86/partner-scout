@@ -41,13 +41,13 @@ class CrawlEngine:
         """Prepare the browser and run config for one company site."""
         self.url = url
         self.browser_config = BrowserConfig(
-            headless=settings.CRAWLER_HEADLESS,
+            headless=settings.CRAWLER_HEADLESS,  # type: ignore[misc]
             extra_args=["--no-sandbox", "--disable-dev-shm-usage"],
         )
         self.crawler_run_config = CrawlerRunConfig(
             deep_crawl_strategy=BestFirstCrawlingStrategy(
-                max_depth=settings.CRAWLER_MAX_DEPTH,
-                max_pages=settings.CRAWLER_MAX_PAGES,
+                max_depth=settings.CRAWLER_MAX_DEPTH,  # type: ignore[misc]
+                max_pages=settings.CRAWLER_MAX_PAGES,  # type: ignore[misc]
                 include_external=False,  # don't leave the work site
                 filter_chain=FilterChain(
                     [
@@ -63,13 +63,13 @@ class CrawlEngine:
                 url_scorer=KeywordRelevanceScorer(
                     keywords=[*URL_INCLUDE, *RELEVANCE_KEYWORDS],
                 ),
-                score_threshold=settings.CRAWLER_SCORE_THRESHOLD,
+                score_threshold=settings.CRAWLER_SCORE_THRESHOLD,  # type: ignore[misc]
             ),
             extraction_strategy=LLMExtractionStrategy(
                 llm_config=LLMConfig(
-                    provider=settings.CRAWLER_LLM_MODEL,
-                    api_token=settings.OPENAI_API_KEY,
-                    temperature=settings.CRAWLER_LLM_TEMPERATURE,
+                    provider=settings.CRAWLER_LLM_MODEL,  # type: ignore[misc]
+                    api_token=settings.OPENAI_API_KEY,  # type: ignore[misc]
+                    temperature=settings.CRAWLER_LLM_TEMPERATURE,  # type: ignore[misc]
                 ),
                 instruction=GATE_INSTRUCTION,
                 schema=PageExtraction.model_json_schema(),
@@ -79,7 +79,7 @@ class CrawlEngine:
             ),
             excluded_tags=["script", "style", "nav", "header", "footer"],
             cache_mode=CacheMode.BYPASS,
-            page_timeout=settings.CRAWLER_PAGE_TIMEOUT,
+            page_timeout=settings.CRAWLER_PAGE_TIMEOUT,  # type: ignore[misc]
             stream=True,
         )
 
@@ -120,6 +120,6 @@ class CrawlEngine:
                 yield CrawledPage(
                     url=result.url,
                     title=(result.metadata or {}).get("title", ""),
-                    content=text[: settings.CRAWLER_MAX_CONTENT_CHARS],
+                    content=text[: settings.CRAWLER_MAX_CONTENT_CHARS],  # type: ignore[misc]
                     extraction=extraction,
                 )
