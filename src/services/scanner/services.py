@@ -1,9 +1,12 @@
 import logging
+from functools import partial
 from typing import TYPE_CHECKING, final, override
 from uuid import UUID
 
+from django.db import IntegrityError
+
 from apps.common.services.base import BaseService
-from apps.common.services.hashing import HashService
+from apps.companies.repository import CompanyRepository
 from apps.persons.models import Person, PersonMention
 from apps.persons.repository import PersonMentionRepository, PersonRepository
 from apps.scans.choices import ScanStatus
@@ -11,18 +14,46 @@ from apps.scans.models import Scan, ScanSource
 from apps.scans.repository import ScanRepository, ScanSourceRepository
 from apps.sources.models import Source
 from apps.sources.repository import SourceRepository
-from services.scanner.crawler.core.engine import CrawlEngine
+from services.scanner.crawler.engine import CrawlEngine
 
 if TYPE_CHECKING:
-    from services.scanner.crawler.core.llm_extractor.schemas import (
-        CrawledPage,
-    )
+    from services.scanner.crawler.llm_extractor.schemas import CrawledPage
 
 logger = logging.getLogger(__name__)
 
 
 @final
-class SourceCollectService(BaseService):
+class PlanScanService(BaseService):
+    """Open a pending scan for every scan-enabled company."""
+
+    company_repository = CompanyRepository()
+    scan_repository = ScanRepository()
+
+    @override
+    async def execute(self) -> list[UUID]:
+        """Create pending scans and return the ids of the new ones."""
+        companies = await self.company_repository.list_all(
+            filters={"scan_enabled": True},
+        )
+        scan_ids: list[UUID] = []
+        for company in companies:
+            scan = None
+            try:
+                scan = await self.scan_repository.create(
+                    Scan(company=company, status=ScanStatus.PENDING),
+                )
+            except IntegrityError:
+                logger.info(
+                    msg=f"Company {company.id} already has an "
+                    "active scan; skipping",
+                )
+            if scan is not None:
+                scan_ids.append(scan.id)
+        return scan_ids
+
+
+@final
+class CollectSourceService(BaseService):
     """Crawl a company site and persist its sources, persons and mentions."""
 
     person_repository = PersonRepository()
@@ -55,6 +86,9 @@ class SourceCollectService(BaseService):
         crawl_engine = CrawlEngine(
             url=scan.company.website_url,
             company_name=scan.company.name,
+            on_page_scanned=partial(
+                self.scan_repository.increment_pages_scanned, scan=scan
+            ),
         )
         try:
             async for page in crawl_engine.crawl():
@@ -74,26 +108,21 @@ class SourceCollectService(BaseService):
         return scan
 
     async def _collect_page(self, scan: Scan, page: CrawledPage) -> None:
-        """Count one crawled page and persist it when it is relevant."""
+        """Persist one crawled page as a source with its persons."""
         logger.info(
             msg=f"[scan {scan.id}] {page.url} "
             f"relevant={page.extraction.is_relevant} "
             f"persons={len(page.extraction.persons)}"
         )
-        await self.scan_repository.increment_pages_scanned(scan=scan)
 
-        if not page.extraction.is_relevant:
-            return
-
-        content_hash = HashService.build_sha256(value=page.content)
+        url = Source.normalize_url(page.url)
         source = await self.source_repository.get_or_create(
-            filters={"content_hash": content_hash},
+            filters={"url": url},
             instance=Source(
-                url=page.url,
+                url=url,
                 title=page.title,
                 page_type=page.extraction.page_type,
                 is_hidden=page.is_hidden,
-                content=page.content,
             ),
         )
         await self.scan_source_repository.get_or_create(
@@ -124,6 +153,9 @@ class SourceCollectService(BaseService):
                     person=person,
                     source=source,
                     mention_type=extracted.mention_type,
+                    role_title=extracted.role_title,
+                    email=extracted.email,
+                    phone=extracted.phone,
                     context=extracted.context,
                 ),
             )

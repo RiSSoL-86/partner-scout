@@ -1,6 +1,6 @@
 import re
 
-# Deterministic post-filter over the title the gate LLM copies into `position`.
+# Deterministic post-filter over the title the gate LLM puts in `role_title`.
 POSITION_ALLOW = re.compile(
     r"партн[её]р|директор|partner|director",
     re.IGNORECASE,

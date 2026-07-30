@@ -16,4 +16,3 @@ class SourceFactory(DjangoModelFactory[Source]):
     url = factory.Sequence(lambda n: f"https://src{n}.example.com/page")
     title = factory.Sequence(lambda n: f"Source page #{n}")
     page_type = PageType.PROFILE
-    content = factory.Sequence(lambda n: f"Source content {n}")

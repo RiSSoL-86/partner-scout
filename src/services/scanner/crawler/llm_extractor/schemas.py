@@ -16,7 +16,7 @@ class ExtractedPerson(BaseModel):
         description="Person middle name or patronymic, empty if absent.",
     )
     last_name: str = Field(description="Person family name.")
-    position: str = Field(
+    role_title: str = Field(
         default="",
         description=(
             "Verbatim job title exactly as printed on the page "
@@ -28,6 +28,14 @@ class ExtractedPerson(BaseModel):
             "How the person appears on this page: 0 personal profile, "
             "1 organizational-unit listing, 2 otherwise."
         ),
+    )
+    email: str = Field(
+        default="",
+        description="Person work email printed on the page, empty if absent.",
+    )
+    phone: str = Field(
+        default="",
+        description="Person work phone printed on the page, empty if absent.",
     )
     context: str = Field(
         description="Short quote from the page justifying the person.",
@@ -62,6 +70,5 @@ class CrawledPage(BaseModel):
 
     url: str
     title: str
-    content: str
     is_hidden: bool = False
     extraction: PageExtraction

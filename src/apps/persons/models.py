@@ -133,6 +133,17 @@ class PersonMention(UUIDAbstractModel, TimestampedAbstractModel):
         choices=MentionType.choices,
         default=MentionType.OTHER,
     )
+    role_title = models.CharField(
+        verbose_name=_("role title"),
+        max_length=255,
+    )
+    email = models.EmailField(verbose_name=_("email"), blank=True, default="")
+    phone = models.CharField(
+        verbose_name=_("phone number"),
+        blank=True,
+        default="",
+        max_length=50,
+    )
     context = models.TextField(
         verbose_name=_("context"),
         blank=True,

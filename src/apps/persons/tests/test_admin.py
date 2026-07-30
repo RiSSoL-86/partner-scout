@@ -35,7 +35,6 @@ def create_source() -> Source:
     return Source.objects.create(
         url="https://example.com/team",
         title="Team",
-        content="Leadership profile page.",
     )
 
 
@@ -112,6 +111,9 @@ def test_source_person_mention_inline_configuration() -> None:
         "scan",
         "person",
         "mention_type",
+        "role_title",
+        "email",
+        "phone",
         "context",
     )
 

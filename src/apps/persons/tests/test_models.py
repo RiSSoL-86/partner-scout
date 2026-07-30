@@ -24,7 +24,6 @@ def create_source() -> Source:
     return Source.objects.create(
         url="https://example.com/team",
         title="Team",
-        content="Leadership profile page.",
     )
 
 
@@ -144,6 +143,9 @@ def test_person_mention_defaults() -> None:
 
     assert isinstance(mention.id, uuid.UUID)
     assert mention.mention_type == MentionType.OTHER
+    assert mention.role_title == ""
+    assert mention.email == ""
+    assert mention.phone == ""
     assert mention.context == "Ivan Petrov is listed as a partner."
     assert mention.created_timestamp is not None
     assert mention.updated_timestamp is not None

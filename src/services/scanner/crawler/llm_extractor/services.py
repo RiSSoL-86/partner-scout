@@ -9,20 +9,20 @@ from django.conf import settings
 from pydantic import ValidationError
 
 from apps.common.services.base import BaseService
-from services.scanner.crawler.core.llm_extractor.filter_prompt import (
+from services.scanner.crawler.llm_extractor.prompt import (
     build_filter_prompt,
 )
-from services.scanner.crawler.core.llm_extractor.schemas import (
+from services.scanner.crawler.llm_extractor.schemas import (
     CrawledPage,
     ExtractedPerson,
     PageExtraction,
 )
-from services.scanner.crawler.core.site_scanner.search_rules import (
+from services.scanner.crawler.url_scanner.search_rules import (
     is_target_position,
 )
 
 if TYPE_CHECKING:
-    from services.scanner.crawler.core.site_scanner.schemas import (
+    from services.scanner.crawler.url_scanner.schemas import (
         PageCandidate,
     )
 
@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 class LlmExtractorService(BaseService):
     """Turn one candidate page into a verdict with a single LLM call."""
 
-    def __init__(self, company_name: str, website: str) -> None:
+    def __init__(self, website: str, company_name: str) -> None:
         """Build the gate LLM strategy for the firm being scanned."""
         self.strategy = LLMExtractionStrategy(
             llm_config=LLMConfig(
@@ -77,25 +77,23 @@ class LlmExtractorService(BaseService):
 
         kept: list[ExtractedPerson] = []
         for person in extraction.persons:
-            if is_target_position(person.position):
+            if is_target_position(person.role_title):
                 kept.append(person)
                 continue
             logger.info(
                 msg=(
                     f"[{candidate.url}] dropped "
                     f"{person.last_name} {person.first_name} "
-                    f"by position (position={person.position!r})"
+                    f"by position (role_title={person.role_title!r})"
                 )
             )
         if not kept:
             return None
         extraction.persons = kept
 
-        limit = settings.CRAWLER_MAX_CONTENT_CHARS  # type: ignore[misc]
         return CrawledPage(
             url=candidate.url,
             title=candidate.title,
-            content=candidate.text[:limit],
             is_hidden=candidate.is_hidden,
             extraction=extraction,
         )

@@ -37,10 +37,11 @@ Prefer the main purpose: a partner quoted in news is 4, not 0; an article
 written by a partner is 2, not 0.
 
 For every qualifying person return: first/middle (may be empty)/last name;
-`position` (job title copied verbatim); `mention_type` (0 personal profile,
-1 organizational-unit listing, 2 otherwise); `context` (one short quote
-justifying the person). Names may be in Russian. Extract nothing when no
-one qualifies.
+`role_title` (job title copied verbatim); `mention_type` (0 personal profile,
+1 organizational-unit listing, 2 otherwise); `email` and `phone` (work
+contacts printed on the page, empty when absent — never guess); `context`
+(one short quote justifying the person). Names may be in Russian. Extract
+nothing when no one qualifies.
 """.strip()
 
 

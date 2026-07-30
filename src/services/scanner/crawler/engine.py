@@ -1,24 +1,27 @@
 import asyncio
 import logging
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import TYPE_CHECKING, final
 from urllib.parse import urlparse
 
 from crawl4ai import AsyncWebCrawler, BrowserConfig
 from django.conf import settings
 
-from services.scanner.crawler.core.llm_extractor.service import (
+from services.scanner.crawler.llm_extractor.services import (
     LlmExtractorService,
 )
-from services.scanner.crawler.core.site_scanner.service import (
-    SiteScannerService,
+from services.scanner.crawler.url_collector.services import (
+    UrlCollectorService,
+)
+from services.scanner.crawler.url_scanner.services import (
+    UrlScannerService,
 )
 
 if TYPE_CHECKING:
-    from services.scanner.crawler.core.llm_extractor.schemas import (
+    from services.scanner.crawler.llm_extractor.schemas import (
         CrawledPage,
     )
-    from services.scanner.crawler.core.site_scanner.schemas import (
+    from services.scanner.crawler.url_scanner.schemas import (
         PageCandidate,
     )
 
@@ -29,18 +32,24 @@ logger = logging.getLogger(__name__)
 class CrawlEngine:
     """Scan a company site: cheap keyword pass first, LLM pass on the rest."""
 
-    def __init__(self, url: str, company_name: str = "") -> None:
+    def __init__(
+        self,
+        url: str,
+        company_name: str = "",
+        on_page_scanned: Callable[[], Awaitable[object]] | None = None,
+    ) -> None:
         """Wire the site scanner and the LLM extractor for one company."""
         self.domain = urlparse(url).netloc
         self.browser_config = BrowserConfig(
             headless=settings.CRAWLER_HEADLESS,  # type: ignore[misc]
             extra_args=["--no-sandbox", "--disable-dev-shm-usage"],
         )
-        self.site_scanner_service = SiteScannerService(
-            url=url, domain=self.domain
+        self.url_collector_service = UrlCollectorService(domain=self.domain)
+        self.url_scanner_service = UrlScannerService(
+            domain=self.domain, on_page_scanned=on_page_scanned
         )
         self.llm_extractor_service = LlmExtractorService(
-            company_name=company_name, website=url
+            website=url, company_name=company_name
         )
 
     async def crawl(self) -> AsyncIterator[CrawledPage]:
@@ -69,7 +78,15 @@ class CrawlEngine:
 
         async def walk() -> None:
             tasks: list[asyncio.Task[None]] = []
-            candidates = self.site_scanner_service.execute(crawler=crawler)
+            (
+                fetch_urls,
+                hidden_urls,
+            ) = await self.url_collector_service.execute()
+            candidates = self.url_scanner_service.execute(
+                crawler=crawler,
+                fetch_urls=fetch_urls,
+                hidden_urls=hidden_urls,
+            )
             try:
                 async for candidate in candidates:
                     tasks.append(
