@@ -24,12 +24,13 @@ class Migration(migrations.Migration):
                 ('middle_name', models.CharField(blank=True, default='', max_length=100, verbose_name='middle name')),
                 ('last_name', models.CharField(max_length=100, verbose_name='last name')),
                 ('normalized_name', models.CharField(editable=False, max_length=255, verbose_name='normalized name')),
+                ('identity_key', models.CharField(default='', editable=False, max_length=201, verbose_name='identity key')),
             ],
             options={
                 'verbose_name': 'person',
                 'verbose_name_plural': 'persons',
-                'indexes': [models.Index(fields=['normalized_name'], name='person_normalized_idx')],
-                'constraints': [models.UniqueConstraint(django.db.models.functions.text.Lower('normalized_name'), name='unique_normalized_name')],
+                'indexes': [models.Index(fields=['normalized_name'], name='person_normalized_idx'), models.Index(fields=['identity_key'], name='person_identity_idx')],
+                'constraints': [models.UniqueConstraint(django.db.models.functions.text.Lower('identity_key'), django.db.models.functions.text.Lower('middle_name'), name='unique_person_identity')],
             },
         ),
         migrations.CreateModel(

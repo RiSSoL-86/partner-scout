@@ -25,6 +25,12 @@ class Person(UUIDAbstractModel, TimestampedAbstractModel):
         editable=False,
         max_length=255,
     )
+    identity_key = models.CharField(
+        _("identity key"),
+        editable=False,
+        default="",
+        max_length=201,
+    )
 
     class Meta:
         """Configure person metadata."""
@@ -34,14 +40,19 @@ class Person(UUIDAbstractModel, TimestampedAbstractModel):
 
         constraints = [
             models.UniqueConstraint(
-                Lower("normalized_name"),
-                name="unique_normalized_name",
+                Lower("identity_key"),
+                Lower("middle_name"),
+                name="unique_person_identity",
             ),
         ]
         indexes = [
             models.Index(
                 fields=("normalized_name",),
                 name="person_normalized_idx",
+            ),
+            models.Index(
+                fields=("identity_key",),
+                name="person_identity_idx",
             ),
         ]
 
@@ -55,19 +66,37 @@ class Person(UUIDAbstractModel, TimestampedAbstractModel):
         parts = (last_name, first_name, middle_name)
         return " ".join(part for part in (p.strip() for p in parts) if part)
 
+    @staticmethod
+    def build_identity_key(first_name: str, last_name: str) -> str:
+        """Build the order-insensitive dedup key from first and last name."""
+        parts = sorted(
+            part
+            for part in (first_name.strip().lower(), last_name.strip().lower())
+            if part
+        )
+        return " ".join(parts)
+
     @override
     def save(self, *args: Any, **kwargs: Any) -> None:
-        """Store the assembled normalized name before saving."""
+        """Store the assembled normalized name and identity key before save."""
         self.normalized_name = self.build_normalized_name(
             first_name=self.first_name,
             middle_name=self.middle_name,
+            last_name=self.last_name,
+        )
+        self.identity_key = self.build_identity_key(
+            first_name=self.first_name,
             last_name=self.last_name,
         )
 
         update_fields = kwargs.get("update_fields")
         name_fields = {"first_name", "middle_name", "last_name"}
         if update_fields is not None and name_fields & set(update_fields):
-            kwargs["update_fields"] = {*update_fields, "normalized_name"}
+            kwargs["update_fields"] = {
+                *update_fields,
+                "normalized_name",
+                "identity_key",
+            }
 
         super().save(*args, **kwargs)
 

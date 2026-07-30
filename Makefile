@@ -4,14 +4,11 @@ install:
 pre-commit.install:
 	uv run pre-commit install
 
-compose.deps.dev:
-	docker compose -f compose.deps.dev.yml up -d
-
-compose.deps.dev.down:
-	docker compose -f compose.deps.dev.yml down
-
 compose.dev:
-	docker compose -f compose.deps.dev.yml -f compose.dev.yml up --build
+	docker compose -f compose.deps.dev.yml -f compose.dev.yml up --build -d
+
+compose.dev.up:
+	docker compose -f compose.deps.dev.yml -f compose.dev.yml up -d
 
 compose.dev.down:
 	docker compose -f compose.deps.dev.yml -f compose.dev.yml down

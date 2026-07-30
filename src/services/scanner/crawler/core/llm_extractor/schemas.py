@@ -16,6 +16,13 @@ class ExtractedPerson(BaseModel):
         description="Person middle name or patronymic, empty if absent.",
     )
     last_name: str = Field(description="Person family name.")
+    position: str = Field(
+        default="",
+        description=(
+            "Verbatim job title exactly as printed on the page "
+            "(e.g. 'Партнёр', 'Управляющий директор'), empty if absent."
+        ),
+    )
     mention_type: MentionType = Field(
         description=(
             "How the person appears on this page: 0 personal profile, "
@@ -35,7 +42,13 @@ class PageExtraction(BaseModel):
         description="True only for a partner or director of this firm.",
     )
     page_type: PageType = Field(
-        description="Recognized page type code for this page.",
+        description=(
+            "Page type by its primary purpose: 0 profile (one person), "
+            "1 team (many people), 2 publication (authored article/report), "
+            "3 interview (Q&A), 4 news (dated news/press release), "
+            "5 event (conference/webinar), 6 document (downloadable file), "
+            "7 other."
+        ),
     )
     persons: list[ExtractedPerson] = Field(
         default_factory=list,
@@ -50,4 +63,5 @@ class CrawledPage(BaseModel):
     url: str
     title: str
     content: str
+    is_hidden: bool = False
     extraction: PageExtraction

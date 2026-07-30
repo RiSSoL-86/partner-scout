@@ -22,6 +22,7 @@ class Migration(migrations.Migration):
                 ('url', models.URLField(verbose_name='url')),
                 ('title', models.CharField(max_length=255, verbose_name='title')),
                 ('page_type', models.PositiveSmallIntegerField(choices=[(0, 'profile'), (1, 'team'), (2, 'publication'), (3, 'interview'), (4, 'news'), (5, 'event'), (6, 'document'), (7, 'other')], default=7, verbose_name='page type')),
+                ('is_hidden', models.BooleanField(default=False, verbose_name='is hidden')),
                 ('published_timestamp', models.DateTimeField(blank=True, editable=False, null=True, verbose_name='published at')),
                 ('content', models.TextField(verbose_name='content')),
                 ('content_hash', models.CharField(editable=False, max_length=64, unique=True, verbose_name='content hash')),

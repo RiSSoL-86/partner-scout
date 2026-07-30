@@ -48,11 +48,13 @@ class SourceAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
         "title",
         "url",
         "page_type",
+        "is_hidden",
         "published_timestamp",
     )
     list_display_links = ("id",)
     list_filter = (
         "page_type",
+        "is_hidden",
         "published_timestamp",
     )
     inlines = (

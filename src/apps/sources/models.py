@@ -20,6 +20,10 @@ class Source(UUIDAbstractModel, TimestampedAbstractModel):
         choices=PageType.choices,
         default=PageType.OTHER,
     )
+    is_hidden = models.BooleanField(
+        verbose_name=_("is hidden"),
+        default=False,
+    )
     published_timestamp = models.DateTimeField(
         _("published at"),
         blank=True,

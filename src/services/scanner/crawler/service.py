@@ -14,7 +14,9 @@ from apps.sources.repository import SourceRepository
 from services.scanner.crawler.core.engine import CrawlEngine
 
 if TYPE_CHECKING:
-    from services.scanner.crawler.schemas import CrawledPage
+    from services.scanner.crawler.core.llm_extractor.schemas import (
+        CrawledPage,
+    )
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +52,10 @@ class SourceCollectService(BaseService):
             scan=scan, status=ScanStatus.RUNNING
         )
 
-        crawl_engine = CrawlEngine(url=scan.company.website_url)
+        crawl_engine = CrawlEngine(
+            url=scan.company.website_url,
+            company_name=scan.company.name,
+        )
         try:
             async for page in crawl_engine.crawl():
                 await self._collect_page(scan=scan, page=page)
@@ -87,6 +92,7 @@ class SourceCollectService(BaseService):
                 url=page.url,
                 title=page.title,
                 page_type=page.extraction.page_type,
+                is_hidden=page.is_hidden,
                 content=page.content,
             ),
         )
@@ -95,13 +101,12 @@ class SourceCollectService(BaseService):
             instance=ScanSource(scan=scan, source=source),
         )
         for extracted in page.extraction.persons:
-            normalized_name = Person.build_normalized_name(
-                first_name=extracted.first_name,
-                middle_name=extracted.middle_name,
-                last_name=extracted.last_name,
-            )
+            if not extracted.first_name.strip() or (
+                not extracted.last_name.strip()
+            ):
+                continue
             person = await self.person_repository.get_or_create(
-                filters={"normalized_name__iexact": normalized_name},
+                filters={},
                 instance=Person(
                     first_name=extracted.first_name,
                     middle_name=extracted.middle_name,

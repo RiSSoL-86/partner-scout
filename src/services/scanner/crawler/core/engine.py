@@ -1,125 +1,86 @@
-import json
+import asyncio
 import logging
 from collections.abc import AsyncIterator
-from typing import final
+from typing import TYPE_CHECKING, final
 from urllib.parse import urlparse
 
-from crawl4ai import (
-    AsyncWebCrawler,
-    BrowserConfig,
-    CacheMode,
-    CrawlerRunConfig,
-    LLMConfig,
-    LLMExtractionStrategy,
-)
-from crawl4ai.deep_crawling import (
-    BestFirstCrawlingStrategy,
-    DomainFilter,
-    FilterChain,
-    KeywordRelevanceScorer,
-    URLPatternFilter,
-)
+from crawl4ai import AsyncWebCrawler, BrowserConfig
 from django.conf import settings
-from pydantic import ValidationError
 
-from services.scanner.crawler.core.rules import (
-    GATE_INSTRUCTION,
-    RELEVANCE_KEYWORDS,
-    URL_EXCLUDE,
-    URL_INCLUDE,
+from services.scanner.crawler.core.llm_extractor.service import (
+    LlmExtractorService,
 )
-from services.scanner.crawler.schemas import CrawledPage, PageExtraction
+from services.scanner.crawler.core.site_scanner.service import (
+    SiteScannerService,
+)
+
+if TYPE_CHECKING:
+    from services.scanner.crawler.core.llm_extractor.schemas import (
+        CrawledPage,
+    )
+    from services.scanner.crawler.core.site_scanner.schemas import (
+        PageCandidate,
+    )
 
 logger = logging.getLogger(__name__)
 
 
 @final
 class CrawlEngine:
-    """Crawl a company site and stream candidate pages with a verdict."""
+    """Scan a company site: cheap keyword pass first, LLM pass on the rest."""
 
-    def __init__(self, url: str) -> None:
-        """Prepare the browser and run config for one company site."""
-        self.url = url
+    def __init__(self, url: str, company_name: str = "") -> None:
+        """Wire the site scanner and the LLM extractor for one company."""
+        self.domain = urlparse(url).netloc
         self.browser_config = BrowserConfig(
             headless=settings.CRAWLER_HEADLESS,  # type: ignore[misc]
             extra_args=["--no-sandbox", "--disable-dev-shm-usage"],
         )
-        self.crawler_run_config = CrawlerRunConfig(
-            deep_crawl_strategy=BestFirstCrawlingStrategy(
-                max_depth=settings.CRAWLER_MAX_DEPTH,  # type: ignore[misc]
-                max_pages=settings.CRAWLER_MAX_PAGES,  # type: ignore[misc]
-                include_external=False,  # don't leave the work site
-                filter_chain=FilterChain(
-                    [
-                        DomainFilter(allowed_domains=urlparse(url).netloc),
-                        URLPatternFilter(
-                            patterns=[
-                                f"*{fragment}*" for fragment in URL_EXCLUDE
-                            ],
-                            reverse=True,
-                        ),
-                    ]
-                ),
-                url_scorer=KeywordRelevanceScorer(
-                    keywords=[*URL_INCLUDE, *RELEVANCE_KEYWORDS],
-                ),
-                score_threshold=settings.CRAWLER_SCORE_THRESHOLD,  # type: ignore[misc]
-            ),
-            extraction_strategy=LLMExtractionStrategy(
-                llm_config=LLMConfig(
-                    provider=settings.CRAWLER_LLM_MODEL,  # type: ignore[misc]
-                    api_token=settings.OPENAI_API_KEY,  # type: ignore[misc]
-                    temperature=settings.CRAWLER_LLM_TEMPERATURE,  # type: ignore[misc]
-                ),
-                instruction=GATE_INSTRUCTION,
-                schema=PageExtraction.model_json_schema(),
-                extraction_type="schema",
-                input_format="markdown",
-                apply_chunking=False,
-            ),
-            excluded_tags=["script", "style", "nav", "header", "footer"],
-            cache_mode=CacheMode.BYPASS,
-            page_timeout=settings.CRAWLER_PAGE_TIMEOUT,  # type: ignore[misc]
-            stream=True,
+        self.site_scanner_service = SiteScannerService(
+            url=url, domain=self.domain
+        )
+        self.llm_extractor_service = LlmExtractorService(
+            company_name=company_name, website=url
         )
 
     async def crawl(self) -> AsyncIterator[CrawledPage]:
-        """Yield relevance-gated pages discovered from the seed URL."""
-        async with AsyncWebCrawler(config=self.browser_config) as crawler:
-            async for result in await crawler.arun(
-                url=self.url, config=self.crawler_run_config
-            ):
-                extracted_content = result.extracted_content
-                if not result.success or not extracted_content:
-                    continue
+        """Pipe keyword-matched pages straight into the LLM as they arrive."""
+        try:
+            async with AsyncWebCrawler(config=self.browser_config) as crawler:
+                async for page in self._pipeline(crawler=crawler):
+                    yield page
+        finally:
+            self.llm_extractor_service.log_usage(domain=self.domain)
 
-                try:
-                    data = json.loads(extracted_content)
-                except json.JSONDecodeError:
-                    logger.warning(msg="Gate returned non-JSON payload")
-                    continue
+    async def _pipeline(
+        self, crawler: AsyncWebCrawler
+    ) -> AsyncIterator[CrawledPage]:
+        """Walk the sitemap once, yielding pages as the LLM clears them."""
+        semaphore = asyncio.Semaphore(value=settings.CRAWLER_CONCURRENCY)  # type: ignore[misc]
+        queue: asyncio.Queue[CrawledPage | None] = asyncio.Queue()
 
-                if isinstance(data, list):
-                    data = data[0] if data else {}
+        async def gate(candidate: PageCandidate) -> None:
+            async with semaphore:
+                page = await self.llm_extractor_service.execute(
+                    candidate=candidate
+                )
+            if page is not None:
+                await queue.put(page)
 
-                try:
-                    extraction = PageExtraction.model_validate(data)
-                except ValidationError:
-                    logger.warning(
-                        msg="Gate payload did not match the page schema"
+        async def walk() -> None:
+            tasks: list[asyncio.Task[None]] = []
+            candidates = self.site_scanner_service.execute(crawler=crawler)
+            try:
+                async for candidate in candidates:
+                    tasks.append(
+                        asyncio.create_task(gate(candidate=candidate))
                     )
-                    continue
+                if tasks:
+                    await asyncio.gather(*tasks)
+            finally:
+                await queue.put(None)  # sentinel: crawl + LLM both done
 
-                markdown = result.markdown
-                text = (
-                    getattr(markdown, "fit_markdown", "")
-                    or getattr(markdown, "raw_markdown", "")
-                    or str(markdown or "")
-                )
-
-                yield CrawledPage(
-                    url=result.url,
-                    title=(result.metadata or {}).get("title", ""),
-                    content=text[: settings.CRAWLER_MAX_CONTENT_CHARS],  # type: ignore[misc]
-                    extraction=extraction,
-                )
+        walker = asyncio.create_task(walk())
+        while (page := await queue.get()) is not None:
+            yield page
+        await walker

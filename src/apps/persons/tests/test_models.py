@@ -76,23 +76,44 @@ def test_normalized_name_is_generated_ignoring_input() -> None:
     assert person.normalized_name == "Petrov Ivan Ivanovich"
 
 
-def test_normalized_name_has_case_insensitive_unique_constraint() -> None:
-    """Declare case-insensitive uniqueness for normalized names."""
-    field = Person._meta.get_field("normalized_name")
+def test_identity_key_has_case_insensitive_unique_constraint() -> None:
+    """Declare case-insensitive uniqueness for identity key and patronymic."""
     constraints = {
         constraint.name: constraint
         for constraint in Person._meta.constraints
         if isinstance(constraint, models.UniqueConstraint)
     }
 
-    constraint = constraints["unique_normalized_name"]
-    assert field.unique is False
-    assert len(constraint.expressions) == 1
-    assert isinstance(constraint.expressions[0], Lower)
-    assert (
-        constraint.expressions[0].source_expressions[0].name
-        == "normalized_name"
+    constraint = constraints["unique_person_identity"]
+    assert len(constraint.expressions) == 2
+    assert all(isinstance(expr, Lower) for expr in constraint.expressions)
+    assert [
+        expr.source_expressions[0].name for expr in constraint.expressions
+    ] == ["identity_key", "middle_name"]
+
+
+def test_identity_key_ignores_name_order() -> None:
+    """Assemble the same identity key regardless of first/last order."""
+    swapped = Person.build_identity_key(
+        first_name="Гафиатуллин", last_name="Анвар"
     )
+    straight = Person.build_identity_key(
+        first_name="Анвар", last_name="Гафиатуллин"
+    )
+
+    assert swapped == straight == "анвар гафиатуллин"
+
+
+@pytest.mark.django_db
+def test_identity_key_is_generated_on_save() -> None:
+    """Derive the identity key from the name parts, excluding patronymic."""
+    person = Person.objects.create(
+        first_name="Анвар",
+        middle_name="Раисович",
+        last_name="Гафиатуллин",
+    )
+
+    assert person.identity_key == "анвар гафиатуллин"
 
 
 def test_person_mention_has_unique_person_source_constraint() -> None:
