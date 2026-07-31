@@ -13,12 +13,7 @@ logger = logging.getLogger(__name__)
 
 @final
 class AccessControlMiddleware(BaseMiddleware):
-    """Drop updates from chats and users outside the allowlist.
-
-    When both allowlists are empty the bot stays open to everyone. Otherwise
-    an update passes only if it comes from an allowed group chat, or from a
-    private chat with an allowed user id.
-    """
+    """Drop updates from chats and users outside the allowlist."""
 
     def __init__(
         self,

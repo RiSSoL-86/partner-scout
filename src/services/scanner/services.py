@@ -40,7 +40,7 @@ class PlanScanService(BaseService):
             scan = None
             try:
                 scan = await self.scan_repository.create(
-                    Scan(company=company, status=ScanStatus.PENDING),
+                    Scan(company=company, scan_status=ScanStatus.PENDING),
                 )
             except IntegrityError:
                 logger.info(
@@ -56,6 +56,7 @@ class PlanScanService(BaseService):
 class CollectSourceService(BaseService):
     """Crawl a company site and persist its sources, persons and mentions."""
 
+    company_repository = CompanyRepository()
     person_repository = PersonRepository()
     person_mention_repository = PersonMentionRepository()
     scan_repository = ScanRepository()
@@ -72,15 +73,15 @@ class CollectSourceService(BaseService):
         if scan is None:
             return None
 
-        if scan.status != ScanStatus.PENDING:
+        if scan.scan_status != ScanStatus.PENDING:
             logger.info(
-                msg=f"Scan {scan_id} is not pending ({scan.status=}); "
+                msg=f"Scan {scan_id} is not pending ({scan.scan_status=}); "
                 "skipping run"
             )
             return scan
 
-        await self.scan_repository.set_status(
-            scan=scan, status=ScanStatus.RUNNING
+        await self.scan_repository.set_scan_status(
+            scan=scan, scan_status=ScanStatus.RUNNING
         )
 
         crawl_engine = CrawlEngine(
@@ -95,15 +96,24 @@ class CollectSourceService(BaseService):
                 await self._collect_page(scan=scan, page=page)
         except Exception as error:
             logger.exception(msg=f"Scan {scan_id} crawl failed")
-            await self.scan_repository.set_status(
+            await self.scan_repository.set_scan_status(
                 scan=scan,
-                status=ScanStatus.FAILED,
-                error=str(error),
+                scan_status=ScanStatus.FAILED,
+                scan_error=str(error),
             )
             return scan
 
-        await self.scan_repository.set_status(
-            scan=scan, status=ScanStatus.COMPLETED
+        person_mentions_count = await self.person_mention_repository.count(
+            filters={"scan_id": scan.id},
+        )
+        await self.scan_repository.set_scan_status(
+            scan=scan,
+            scan_status=ScanStatus.COMPLETED,
+            scan_report=f"Mentions of persons: {person_mentions_count}.",
+        )
+        await self.company_repository.set_last_scanned_at(
+            company=scan.company,
+            last_scanned_at=scan.created_timestamp,
         )
         return scan
 
@@ -156,6 +166,5 @@ class CollectSourceService(BaseService):
                     role_title=extracted.role_title,
                     email=extracted.email,
                     phone=extracted.phone,
-                    context=extracted.context,
                 ),
             )

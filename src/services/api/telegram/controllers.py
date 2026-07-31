@@ -107,12 +107,12 @@ class CompanyScanDetailController(Controller[PydanticSerializer]):
             scan_index=result["scan_index"],
             scans_total=result["scans_total"],
             person_snapshots=result["person_snapshots"],
-            snapshot_sources=result["snapshot_sources"],
+            mentions_by_person=result["mentions_by_person"],
             persons_total=result["persons_total"],
             partner_count=result["partner_count"],
             director_count=result["director_count"],
             confirmed_count=result["confirmed_count"],
-            sources_count=result["sources_count"],
+            total_sources_count=result["total_sources_count"],
             page=parsed_query.page,
             page_size=PAGE_SIZE,
         )
@@ -197,7 +197,7 @@ class PersonDetailController(Controller[PydanticSerializer]):
         report = PersonReportResponse.build(
             person=result["person"],
             snapshots=result["snapshots"],
-            scan_sources=result["scan_sources"],
+            mentions_by_scan=result["mentions_by_scan"],
             scans_total=result["scans_total"],
             page=parsed_query.page,
             page_size=PAGE_SIZE,

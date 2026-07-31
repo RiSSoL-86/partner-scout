@@ -1,5 +1,7 @@
 from typing import Any, final, override
 
+from django.db.models.functions import Lower
+
 from apps.common.services.base import BaseService
 from apps.persons.repository import PersonRepository
 
@@ -20,7 +22,7 @@ class PersonByLetterListService(BaseService):
         """Return a page of persons by surname initial and their total."""
         persons, total = await self.person_repository.list(
             filters={"normalized_name__istartswith": letter},
-            order_by=("normalized_name",),
+            order_by=(Lower("normalized_name").asc(),),
             offset=offset,
             limit=limit,
         )

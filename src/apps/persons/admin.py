@@ -16,7 +16,9 @@ class SourceMentionInline(admin.TabularInline):  # type: ignore[type-arg]
         "scan",
         "source",
         "mention_type",
-        "context",
+        "role_title",
+        "email",
+        "phone",
         "created_timestamp",
         "updated_timestamp",
     )
@@ -81,6 +83,9 @@ class PersonMentionAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
         "scan",
         "source",
         "mention_type",
+        "role_title",
+        "email",
+        "phone",
     )
     list_display_links = ("id",)
     list_filter = ("mention_type",)
@@ -91,6 +96,9 @@ class PersonMentionAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
         "scan__company__name",
         "source__title",
         "source__url",
+        "role_title",
+        "email",
+        "phone",
     )
 
 

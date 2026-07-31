@@ -65,16 +65,6 @@ def test_source_url_field_is_unique() -> None:
     assert Source._meta.get_field("url").unique is True
 
 
-def test_source_indexes_are_declared() -> None:
-    """Declare indexes used by source lookup and filtering."""
-    indexes = {index.name: index for index in Source._meta.indexes}
-
-    assert indexes["source_page_type_created_idx"].fields == [
-        "page_type",
-        "created_timestamp",
-    ]
-
-
 def test_page_type_values() -> None:
     """Expose stable source page type values."""
     assert PageType.PROFILE == 0

@@ -77,7 +77,7 @@ async def test_count_by_person_id_counts_only_target_person() -> None:
 
 
 async def test_count_by_scan_for_person_groups_by_scan() -> None:
-    """Group a person's source counts per scan, ignoring other people."""
+    """Group a person's mention counts per scan, ignoring other people."""
     person = await create_person()
     first_scan = await create_scan()
     second_scan = await create_scan()

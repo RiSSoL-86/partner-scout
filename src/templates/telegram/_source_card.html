@@ -3,8 +3,14 @@
         <div class="s-icon">🔗</div>
         <div class="s-body">
             <div class="s-title">{{ source.title }}</div>
-            {% if source.context %}
-                <div class="s-context">{{ source.context }}</div>
+            {% if source.role_title %}
+                <div class="s-context">Должность: {{ source.role_title }}</div>
+            {% endif %}
+            {% if source.email %}
+                <div class="s-context">Email: {{ source.email }}</div>
+            {% endif %}
+            {% if source.phone %}
+                <div class="s-context">Телефон: {{ source.phone }}</div>
             {% endif %}
             {% if source.url %}
                 <div class="s-open">

@@ -18,10 +18,7 @@ class ExtractedPerson(BaseModel):
     last_name: str = Field(description="Person family name.")
     role_title: str = Field(
         default="",
-        description=(
-            "Verbatim job title exactly as printed on the page "
-            "(e.g. 'Партнёр', 'Управляющий директор'), empty if absent."
-        ),
+        description="Verbatim job title exactly as printed on the page.",
     )
     mention_type: MentionType = Field(
         description=(
@@ -36,9 +33,6 @@ class ExtractedPerson(BaseModel):
     phone: str = Field(
         default="",
         description="Person work phone printed on the page, empty if absent.",
-    )
-    context: str = Field(
-        description="Short quote from the page justifying the person.",
     )
 
 

@@ -18,8 +18,13 @@ CELERY_BEAT_SCHEDULE = {
         "task": "scans.run_weekly",
         "schedule": crontab(day_of_week="saturday", hour=0, minute=0),
     },
+    "run-weekly-aggregations": {
+        "task": "aggregations.run_weekly",
+        "schedule": crontab(day_of_week="sunday", hour=0, minute=0),
+    },
 }
 CELERY_IMPORTS = [
     "services.celery_tasks.dummy",
+    "services.celery_tasks.aggregations",
     "services.celery_tasks.scans",
 ]

@@ -46,10 +46,10 @@ def test_scan_defaults() -> None:
 
     scan = Scan.objects.create(company=company)
 
-    assert scan.status == ScanStatus.PENDING
+    assert scan.scan_status == ScanStatus.PENDING
     assert scan.pages_scanned == 0
-    assert scan.report == ""
-    assert scan.error == ""
+    assert scan.scan_report == ""
+    assert scan.scan_error == ""
     assert str(scan) == f"{scan.id} (Example Consulting)"
     assert list(company.scans.all()) == [scan]
 
@@ -61,11 +61,11 @@ def test_company_allows_multiple_historical_scans() -> None:
 
     completed = Scan.objects.create(
         company=company,
-        status=ScanStatus.COMPLETED,
+        scan_status=ScanStatus.COMPLETED,
     )
     failed = Scan.objects.create(
         company=company,
-        status=ScanStatus.FAILED,
+        scan_status=ScanStatus.FAILED,
     )
 
     assert list(company.scans.order_by("created_timestamp")) == [
@@ -90,24 +90,24 @@ def test_company_allows_only_one_active_scan(
 ) -> None:
     """Reject a second pending or running scan for one company."""
     company = create_company()
-    Scan.objects.create(company=company, status=existing_status)
+    Scan.objects.create(company=company, scan_status=existing_status)
 
     with pytest.raises(IntegrityError), transaction.atomic():
-        Scan.objects.create(company=company, status=new_status)
+        Scan.objects.create(company=company, scan_status=new_status)
 
 
 @pytest.mark.django_db
 def test_company_can_start_scan_after_historical_scan() -> None:
     """Allow a new active scan after a previous scan has finished."""
     company = create_company()
-    Scan.objects.create(company=company, status=ScanStatus.COMPLETED)
+    Scan.objects.create(company=company, scan_status=ScanStatus.COMPLETED)
 
     active = Scan.objects.create(
         company=company,
-        status=ScanStatus.PENDING,
+        scan_status=ScanStatus.PENDING,
     )
 
-    assert active.status == ScanStatus.PENDING
+    assert active.scan_status == ScanStatus.PENDING
 
 
 @pytest.mark.django_db
@@ -190,7 +190,7 @@ def test_scan_indexes_are_declared() -> None:
         "created_timestamp",
     ]
     assert indexes["scan_status_created_idx"].fields == [
-        "status",
+        "scan_status",
         "created_timestamp",
     ]
 
@@ -239,10 +239,8 @@ def test_scan_choice_values() -> None:
     assert PositionType.PARTNER == 0
     assert PositionType.DIRECTOR == 1
     assert WorkStatus.UNKNOWN == 0
-    assert WorkStatus.FRONT_ACTIVE == 1
-    assert WorkStatus.FRONT_INACTIVE == 2
-    assert WorkStatus.BACK_OFFICE == 3
-    assert WorkStatus.NOT_EMPLOYEE == 4
+    assert WorkStatus.FRONT_LINE == 1
+    assert WorkStatus.BACK_OFFICE == 2
     assert Specialization.UNKNOWN == 0
     assert Specialization.INDUSTRIAL == 1
     assert Specialization.FUNCTIONAL == 2

@@ -7,7 +7,9 @@ from apps.common.repository import BaseRepository
 from apps.scans.models import PersonSnapshot, Scan, ScanSource
 
 if TYPE_CHECKING:
-    from apps.scans.choices import ScanStatus
+    from collections.abc import Sequence
+
+    from apps.scans.choices import AggregationStatus, ScanStatus
 
 
 @final
@@ -17,16 +19,44 @@ class ScanRepository(BaseRepository[Scan, UUID]):
     model = Scan
 
     @staticmethod
-    async def set_status(
+    async def set_scan_status(
         scan: Scan,
-        status: ScanStatus,
-        error: str = "",
+        scan_status: ScanStatus,
+        scan_report: str = "",
+        scan_error: str = "",
     ) -> Scan:
-        """Persist a scan status change and any accompanying error text."""
-        scan.status = status
-        scan.error = error
+        """Persist a scan status change with any report or error text."""
+        scan.scan_status = scan_status
+        scan.scan_report = scan_report
+        scan.scan_error = scan_error
         await scan.asave(
-            update_fields=("status", "error", "updated_timestamp"),
+            update_fields=(
+                "scan_status",
+                "scan_report",
+                "scan_error",
+                "updated_timestamp",
+            ),
+        )
+        return scan
+
+    @staticmethod
+    async def set_aggregation_status(
+        scan: Scan,
+        aggregation_status: AggregationStatus,
+        aggregation_report: str = "",
+        aggregation_error: str = "",
+    ) -> Scan:
+        """Persist an aggregation status change with error or report text."""
+        scan.aggregation_status = aggregation_status
+        scan.aggregation_report = aggregation_report
+        scan.aggregation_error = aggregation_error
+        await scan.asave(
+            update_fields=(
+                "aggregation_status",
+                "aggregation_report",
+                "aggregation_error",
+                "updated_timestamp",
+            ),
         )
         return scan
 
@@ -96,3 +126,15 @@ class PersonSnapshotRepository(BaseRepository[PersonSnapshot, UUID]):
     """Persistence operations for person snapshots."""
 
     model = PersonSnapshot
+
+    async def replace_for_scan(
+        self,
+        scan_id: UUID,
+        person_snapshots: Sequence[PersonSnapshot],
+    ) -> int:
+        """Swap a scan's snapshots for a freshly aggregated set."""
+        await self.model.objects.filter(scan_id=scan_id).adelete()
+        if not person_snapshots:
+            return 0
+        created = await self.model.objects.abulk_create(objs=person_snapshots)
+        return len(created)

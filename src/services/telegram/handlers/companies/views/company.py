@@ -62,7 +62,10 @@ class CompanyView:
             content = as_list(
                 header,
                 as_line(f"Scan {scan_index + 1}/{scans_total} 🔎"),
-                as_line("Status: ", scan.get_status_display()),
+                as_line("Status: ", scan.get_scan_status_display()),
+                as_line(
+                    "Aggregation: ", scan.get_aggregation_status_display()
+                ),
                 as_line(
                     "Scan date: ",
                     (

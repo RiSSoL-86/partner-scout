@@ -11,7 +11,7 @@ class PersonMentionsService(BaseService):
     """Load a person and how many scans they appear in for Telegram."""
 
     person_repository = PersonRepository()
-    snapshot_repository = PersonSnapshotRepository()
+    person_snapshot_repository = PersonSnapshotRepository()
 
     @override
     async def execute(
@@ -23,7 +23,7 @@ class PersonMentionsService(BaseService):
         if person is None:
             return {"person": None, "total": 0}
 
-        total = await self.snapshot_repository.count(
+        total = await self.person_snapshot_repository.count(
             filters={"person_id": person_id},
         )
         return {"person": person, "total": total}

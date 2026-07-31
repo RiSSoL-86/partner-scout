@@ -138,7 +138,6 @@ def test_person_mention_defaults() -> None:
         scan=scan,
         person=person,
         source=source,
-        context="Ivan Petrov is listed as a partner.",
     )
 
     assert isinstance(mention.id, uuid.UUID)
@@ -146,7 +145,6 @@ def test_person_mention_defaults() -> None:
     assert mention.role_title == ""
     assert mention.email == ""
     assert mention.phone == ""
-    assert mention.context == "Ivan Petrov is listed as a partner."
     assert mention.created_timestamp is not None
     assert mention.updated_timestamp is not None
     assert str(mention) == f"{person} in {source}"
@@ -165,7 +163,6 @@ def test_person_mention_rejects_duplicate_person_source() -> None:
         scan=scan,
         person=person,
         source=source,
-        context="First context.",
     )
 
     with pytest.raises(IntegrityError), transaction.atomic():
@@ -173,7 +170,6 @@ def test_person_mention_rejects_duplicate_person_source() -> None:
             scan=scan,
             person=person,
             source=source,
-            context="Second context.",
         )
 
 

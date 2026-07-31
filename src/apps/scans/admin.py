@@ -54,15 +54,22 @@ class ScanAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
     list_display = (
         "id",
         "company",
-        "status",
+        "scan_status",
         "pages_scanned",
+        "aggregation_status",
     )
     list_display_links = ("id",)
-    list_filter = ("status",)
+    list_filter = ("scan_status", "aggregation_status")
     ordering = ("-created_timestamp",)
     inlines = (ScanSourceInline, PersonSnapshotInline)
     readonly_fields = ("id", "created_timestamp", "updated_timestamp")
-    search_fields = ("company__name", "report", "error")
+    search_fields = (
+        "company__name",
+        "scan_report",
+        "scan_error",
+        "aggregation_report",
+        "aggregation_error",
+    )
 
 
 @final

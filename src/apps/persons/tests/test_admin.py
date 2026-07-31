@@ -82,7 +82,9 @@ def test_source_mention_inline_configuration() -> None:
         "scan",
         "source",
         "mention_type",
-        "context",
+        "role_title",
+        "email",
+        "phone",
         "created_timestamp",
         "updated_timestamp",
     )
@@ -114,7 +116,6 @@ def test_source_person_mention_inline_configuration() -> None:
         "role_title",
         "email",
         "phone",
-        "context",
     )
 
 
@@ -136,6 +137,9 @@ def test_person_mention_admin_registration() -> None:
         "scan",
         "source",
         "mention_type",
+        "role_title",
+        "email",
+        "phone",
     )
     assert person_mention_admin.list_filter == ("mention_type",)
     assert person_mention_admin.search_fields == (
@@ -143,6 +147,9 @@ def test_person_mention_admin_registration() -> None:
         "scan__company__name",
         "source__title",
         "source__url",
+        "role_title",
+        "email",
+        "phone",
     )
 
 
@@ -158,7 +165,6 @@ def test_person_mention_admin_pages_are_available(
         scan=scan,
         person=person,
         source=source,
-        context="Ivan Petrov is listed as a partner.",
     )
 
     urls = (
@@ -185,7 +191,6 @@ def test_person_admin_change_page_shows_mentions_inline(
         scan=scan,
         person=person,
         source=source,
-        context="Ivan Petrov is listed as a partner.",
     )
 
     response = admin_client.get(
@@ -212,7 +217,6 @@ def test_source_admin_change_page_shows_mentions_inline(
         scan=scan,
         person=person,
         source=source,
-        context="Ivan Petrov is listed as a partner.",
     )
 
     response = admin_client.get(

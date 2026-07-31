@@ -5,6 +5,7 @@ from django.utils.translation import gettext_lazy as _
 
 from apps.common.models import TimestampedAbstractModel, UUIDAbstractModel
 from apps.scans.choices import (
+    AggregationStatus,
     ConfirmationLevel,
     PositionType,
     PracticeArea,
@@ -24,17 +25,40 @@ class Scan(UUIDAbstractModel, TimestampedAbstractModel):
         related_name="scans",
         verbose_name=_("company"),
     )
-    status = models.PositiveSmallIntegerField(
+    scan_status = models.PositiveSmallIntegerField(
         verbose_name=_("scan status"),
         choices=ScanStatus.choices,
         default=ScanStatus.PENDING,
+    )
+    scan_report = models.TextField(
+        verbose_name=_("scan report"),
+        blank=True,
+        default="",
+    )
+    scan_error = models.TextField(
+        verbose_name=_("scan error"),
+        blank=True,
+        default="",
     )
     pages_scanned = models.PositiveIntegerField(
         verbose_name=_("pages scanned"),
         default=0,
     )
-    report = models.TextField(verbose_name=_("report"), blank=True, default="")
-    error = models.TextField(verbose_name=_("error"), blank=True, default="")
+    aggregation_status = models.PositiveSmallIntegerField(
+        verbose_name=_("aggregation status"),
+        choices=AggregationStatus.choices,
+        default=AggregationStatus.PENDING,
+    )
+    aggregation_report = models.TextField(
+        verbose_name=_("aggregation report"),
+        blank=True,
+        default="",
+    )
+    aggregation_error = models.TextField(
+        verbose_name=_("aggregation error"),
+        blank=True,
+        default="",
+    )
 
     class Meta:
         """Configure scan metadata and active-scan uniqueness."""
@@ -46,7 +70,7 @@ class Scan(UUIDAbstractModel, TimestampedAbstractModel):
             models.UniqueConstraint(
                 fields=("company",),
                 condition=models.Q(
-                    status__in=(ScanStatus.PENDING, ScanStatus.RUNNING),
+                    scan_status__in=(ScanStatus.PENDING, ScanStatus.RUNNING),
                 ),
                 name="unique_active_scan_per_company",
             ),
@@ -57,7 +81,7 @@ class Scan(UUIDAbstractModel, TimestampedAbstractModel):
                 name="scan_company_created_idx",
             ),
             models.Index(
-                fields=("status", "created_timestamp"),
+                fields=("scan_status", "created_timestamp"),
                 name="scan_status_created_idx",
             ),
         ]
@@ -138,12 +162,12 @@ class PersonSnapshot(UUIDAbstractModel, TimestampedAbstractModel):
         choices=PracticeArea.choices,
         default=PracticeArea.UNKNOWN,
     )
-    role_title = models.CharField(verbose_name=_("role title"), max_length=255)
+    role_title = models.CharField(verbose_name=_("role title"), max_length=512)
     organizational_unit = models.CharField(
         verbose_name=_("organizational unit"),
         blank=True,
         default="",
-        max_length=255,
+        max_length=512,
     )
     email = models.EmailField(verbose_name=_("email"), blank=True, default="")
     phone = models.CharField(

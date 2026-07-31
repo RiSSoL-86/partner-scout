@@ -1,5 +1,7 @@
 from typing import Any, final, override
 
+from django.db.models.functions import Lower
+
 from apps.common.services.base import BaseService
 from apps.companies.repository import CompanyRepository
 
@@ -18,7 +20,7 @@ class CompanyListService(BaseService):
     ) -> dict[str, Any]:
         """Return a page of companies and their total."""
         companies, total = await self.company_repository.list(
-            order_by=("name",),
+            order_by=(Lower("name").asc(),),
             offset=offset,
             limit=limit,
         )

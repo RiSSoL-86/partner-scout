@@ -32,7 +32,6 @@ class PersonMentionFactory(DjangoModelFactory[PersonMention]):
     person = factory.SubFactory(PersonFactory)
     source = factory.SubFactory(SourceFactory)
     mention_type = MentionType.PROFILE
-    context = factory.Sequence(lambda n: f"Mentioned in context {n}")
 
     @factory.post_generation
     def created_timestamp(obj, create, extracted, **kwargs):
