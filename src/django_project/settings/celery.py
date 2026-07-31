@@ -16,7 +16,7 @@ CELERY_BROKER_TRANSPORT_OPTIONS = {
 CELERY_BEAT_SCHEDULE = {
     "run-weekly-scans": {
         "task": "scans.run_weekly",
-        "schedule": crontab(day_of_week=1, hour=3, minute=0),
+        "schedule": crontab(day_of_week="saturday", hour=0, minute=0),
     },
 }
 CELERY_IMPORTS = [
