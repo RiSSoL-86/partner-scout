@@ -1,7 +1,8 @@
-from collections.abc import Sequence
-from typing import final
+from collections.abc import Mapping, Sequence
+from typing import final, override
 from uuid import UUID
 
+from django.db import IntegrityError
 from django.db.models import Count
 from django.db.models.functions import Substr, Upper
 
@@ -14,6 +15,62 @@ class PersonRepository(BaseRepository[Person, UUID]):
     """Persistence operations for persons."""
 
     model = Person
+
+    @override
+    async def get_or_create(
+        self,
+        filters: Mapping[str, object],
+        instance: Person,
+    ) -> Person:
+        """Resolve the person by name identity, creating or enriching it."""
+        key = Person.build_identity_key(
+            first_name=instance.first_name, last_name=instance.last_name
+        )
+        middle = instance.middle_name.strip()
+        candidates = await self.list_all(
+            filters={"identity_key": key},
+            order_by=("created_timestamp",),
+        )
+
+        if middle:
+            for candidate in candidates:
+                if (
+                    candidate.middle_name.strip().casefold()
+                    == middle.casefold()
+                ):
+                    return candidate
+            for candidate in candidates:
+                if not candidate.middle_name.strip():
+                    return await self._enrich_name(
+                        person=candidate, instance=instance
+                    )
+        elif candidates:
+            return candidates[0]
+
+        try:
+            return await self.create(instance)
+        except IntegrityError:
+            # A concurrent page created this identity first; re-resolve.
+            return await self.get_or_create(filters=filters, instance=instance)
+
+    async def _enrich_name(self, person: Person, instance: Person) -> Person:
+        """Adopt the more complete name variant onto an existing record."""
+        person.first_name = instance.first_name
+        person.middle_name = instance.middle_name
+        person.last_name = instance.last_name
+        try:
+            await person.asave(
+                update_fields=(
+                    "first_name",
+                    "middle_name",
+                    "last_name",
+                    "updated_timestamp",
+                ),
+            )
+        except IntegrityError:
+            # A concurrent writer already crystallized this patronymic.
+            return await self.get_or_create(filters={}, instance=instance)
+        return person
 
     async def list_surname_initials(self) -> list[tuple[str, int]]:
         """Return surname initials with their person counts, ordered."""

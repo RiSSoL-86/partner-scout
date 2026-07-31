@@ -41,10 +41,10 @@ class AccessControlMiddleware(BaseMiddleware):
             return await handler(event, data)
 
         logger.warning(
-            "Blocked Telegram update: chat_id=%s chat_type=%s user_id=%s",
-            None if chat is None else chat.id,
-            None if chat is None else chat.type,
-            None if user is None else user.id,
+            msg=f"Blocked Telegram update: "
+            f"chat_id={None if chat is None else chat.id} "
+            f"chat_type={None if chat is None else chat.type} "
+            f"user_id={None if user is None else user.id}"
         )
         return None
 

@@ -4,6 +4,7 @@ import pytest
 from asgiref.sync import sync_to_async
 from django.utils import timezone
 
+from apps.persons.models import Person
 from apps.persons.repository import (
     PersonMentionRepository,
     PersonRepository,
@@ -133,3 +134,88 @@ async def test_list_surname_initials_groups_counts_ordered() -> None:
     initials = await PersonRepository().list_surname_initials()
 
     assert initials == [("I", 1), ("P", 2)]
+
+
+async def resolve(
+    repository: PersonRepository,
+    first_name: str,
+    middle_name: str,
+    last_name: str,
+) -> Person:
+    """Resolve a name to a person through the identity-aware get_or_create."""
+    return await repository.get_or_create(
+        filters={},
+        instance=Person(
+            first_name=first_name,
+            middle_name=middle_name,
+            last_name=last_name,
+        ),
+    )
+
+
+async def test_get_or_create_makes_a_new_person() -> None:
+    """Create a fresh record when no matching identity exists yet."""
+    repository = PersonRepository()
+
+    person = await resolve(repository, "Анвар", "", "Гафиатуллин")
+
+    assert person.identity_key == "анвар гафиатуллин"
+    assert await repository.count() == 1
+
+
+async def test_get_or_create_merges_swapped_name_order() -> None:
+    """Collapse a first/last swap onto the same identity, no new record."""
+    repository = PersonRepository()
+    first = await resolve(repository, "Анвар", "", "Гафиатуллин")
+
+    again = await resolve(repository, "Гафиатуллин", "", "Анвар")
+
+    assert again.id == first.id
+    assert await repository.count() == 1
+
+
+async def test_get_or_create_enriches_missing_patronymic() -> None:
+    """Fill a patronymic-less record instead of spawning a duplicate."""
+    repository = PersonRepository()
+    bare = await resolve(repository, "Анвар", "", "Гафиатуллин")
+
+    enriched = await resolve(repository, "Анвар", "Раисович", "Гафиатуллин")
+
+    assert enriched.id == bare.id
+    assert enriched.middle_name == "Раисович"
+    assert enriched.normalized_name == "Гафиатуллин Анвар Раисович"
+    assert await repository.count() == 1
+
+
+async def test_get_or_create_matches_same_patronymic() -> None:
+    """Return the existing record when the patronymic is the same."""
+    repository = PersonRepository()
+    first = await resolve(repository, "Анвар", "Раисович", "Гафиатуллин")
+
+    again = await resolve(repository, "Анвар", "раисович", "Гафиатуллин")
+
+    assert again.id == first.id
+    assert await repository.count() == 1
+
+
+async def test_get_or_create_splits_on_different_patronymic() -> None:
+    """Treat a different patronymic as a namesake and keep both records."""
+    repository = PersonRepository()
+    raisovich = await resolve(repository, "Анвар", "Раисович", "Гафиатуллин")
+
+    rinatovich = await resolve(repository, "Анвар", "Ринатович", "Гафиатуллин")
+
+    assert rinatovich.id != raisovich.id
+    assert await repository.count() == 2
+
+
+async def test_get_or_create_bare_name_attaches_to_oldest() -> None:
+    """Attach an ambiguous bare name to the oldest matching record."""
+    repository = PersonRepository()
+    oldest = await resolve(repository, "Анвар", "Раисович", "Гафиатуллин")
+    await resolve(repository, "Анвар", "Ринатович", "Гафиатуллин")
+
+    bare = await resolve(repository, "Анвар", "", "Гафиатуллин")
+
+    assert bare.id == oldest.id
+    assert await repository.count() == 2

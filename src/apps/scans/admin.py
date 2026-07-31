@@ -82,7 +82,6 @@ class ScanSourceAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
         "scan__company__name",
         "source__title",
         "source__url",
-        "source__content_hash",
     )
 
 

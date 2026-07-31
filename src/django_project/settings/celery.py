@@ -1,3 +1,5 @@
+from celery.schedules import crontab
+
 from django_project.settings import TIME_ZONE, env
 
 CELERY_BROKER_URL = env("CELERY_BROKER_URL")
@@ -11,5 +13,13 @@ CELERY_BROKER_TRANSPORT_OPTIONS = {
     "visibility_timeout": env.int("CELERY_VISIBILITY_TIMEOUT"),
     "polling_interval": env.float("CELERY_POLLING_INTERVAL"),
 }
-CELERY_BEAT_SCHEDULE = {}
-CELERY_IMPORTS = ["services.celery_tasks.dummy"]
+CELERY_BEAT_SCHEDULE = {
+    "run-weekly-scans": {
+        "task": "scans.run_weekly",
+        "schedule": crontab(day_of_week="saturday", hour=0, minute=0),
+    },
+}
+CELERY_IMPORTS = [
+    "services.celery_tasks.dummy",
+    "services.celery_tasks.scans",
+]

@@ -1,8 +1,13 @@
-from typing import final
+from typing import TYPE_CHECKING, final
 from uuid import UUID
+
+from django.db.models import F
 
 from apps.common.repository import BaseRepository
 from apps.scans.models import PersonSnapshot, Scan, ScanSource
+
+if TYPE_CHECKING:
+    from apps.scans.choices import ScanStatus
 
 
 @final
@@ -10,6 +15,29 @@ class ScanRepository(BaseRepository[Scan, UUID]):
     """Persistence operations for scans."""
 
     model = Scan
+
+    @staticmethod
+    async def set_status(
+        scan: Scan,
+        status: ScanStatus,
+        error: str = "",
+    ) -> Scan:
+        """Persist a scan status change and any accompanying error text."""
+        scan.status = status
+        scan.error = error
+        await scan.asave(
+            update_fields=("status", "error", "updated_timestamp"),
+        )
+        return scan
+
+    @staticmethod
+    async def increment_pages_scanned(scan: Scan) -> Scan:
+        """Persist one more counted page for the running scan."""
+        scan.pages_scanned = F("pages_scanned") + 1
+        await scan.asave(
+            update_fields=("pages_scanned", "updated_timestamp"),
+        )
+        return scan
 
     async def get_with_position(
         self,

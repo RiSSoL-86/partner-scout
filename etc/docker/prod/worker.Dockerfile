@@ -1,4 +1,5 @@
 FROM ghcr.io/astral-sh/uv:0.11.30 AS uv
+
 FROM python:3.14.6-slim-trixie
 
 COPY --from=uv /uv /uvx /bin/
@@ -8,9 +9,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
     UV_PROJECT_ENVIRONMENT=/opt/venv \
-    PATH="/opt/venv/bin:${PATH}" \
-    PORT=8000 \
-    WEB_CONCURRENCY=1
+    PATH="/opt/venv/bin:${PATH}"
 
 WORKDIR /app
 
@@ -19,8 +18,11 @@ COPY pyproject.toml uv.lock ./
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-dev --no-install-project
 
+# Chromium browser + its system libraries, required by crawl4ai/Playwright.
+# Only the Celery worker crawls, so this heavy layer stays out of the web image.
+RUN playwright install-deps chromium \
+    && playwright install chromium
+
 COPY src ./
 
-EXPOSE 8000
-
-CMD ["sh", "-c", "exec uvicorn django_project.asgi:application --host 0.0.0.0 --port \"$PORT\" --workers \"$WEB_CONCURRENCY\""]
+CMD ["celery", "-A", "django_project.celery.app", "worker", "-l", "INFO", "-Q", "celery"]

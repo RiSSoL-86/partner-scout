@@ -62,7 +62,12 @@ class PersonAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
     list_display_links = ("id",)
     inlines = (SourceMentionInline, PersonSnapshotInline)
     ordering = ("normalized_name",)
-    readonly_fields = ("id", "created_timestamp", "updated_timestamp")
+    readonly_fields = (
+        "id",
+        "identity_key",
+        "created_timestamp",
+        "updated_timestamp",
+    )
     search_fields = ("normalized_name",)
 
 

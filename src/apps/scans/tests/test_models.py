@@ -31,12 +31,11 @@ def create_person() -> Person:
     )
 
 
-def create_source(content: str = "Leadership profile page.") -> Source:
+def create_source() -> Source:
     """Create a source for scan model tests."""
     return Source.objects.create(
         url="https://example.com/team",
         title="Team",
-        content=content,
     )
 
 

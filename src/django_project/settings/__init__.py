@@ -52,5 +52,7 @@ settings_include(
     "logging.py",
     "tests.py",
     "sentry.py",
+    "open_ai.py",
+    "scanner.py",
     optional("local_settings.py"),
 )

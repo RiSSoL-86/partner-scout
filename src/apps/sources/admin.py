@@ -17,6 +17,9 @@ class PersonMentionInline(admin.TabularInline):  # type: ignore[type-arg]
         "scan",
         "person",
         "mention_type",
+        "role_title",
+        "email",
+        "phone",
         "context",
     )
     max_num = 0
@@ -48,11 +51,13 @@ class SourceAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
         "title",
         "url",
         "page_type",
+        "is_hidden",
         "published_timestamp",
     )
     list_display_links = ("id",)
     list_filter = (
         "page_type",
+        "is_hidden",
         "published_timestamp",
     )
     inlines = (
@@ -62,14 +67,12 @@ class SourceAdmin(admin.ModelAdmin):  # type: ignore[type-arg]
     ordering = ("-created_timestamp",)
     readonly_fields = (
         "id",
-        "content_hash",
         "created_timestamp",
         "updated_timestamp",
     )
     search_fields = (
         "title",
         "url",
-        "content_hash",
     )
 
 
