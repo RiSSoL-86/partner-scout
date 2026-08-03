@@ -25,4 +25,4 @@ RUN playwright install-deps chromium \
 
 COPY src ./
 
-CMD ["celery", "-A", "django_project.celery.app", "worker", "-l", "INFO", "-Q", "celery"]
+CMD ["celery", "-A", "django_project.celery.app", "worker", "-B", "-l", "INFO", "-Q", "celery", "--concurrency=1"]
