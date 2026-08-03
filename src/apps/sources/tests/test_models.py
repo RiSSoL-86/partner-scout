@@ -49,30 +49,22 @@ def test_source_url_is_unique() -> None:
 @pytest.mark.parametrize(
     ("raw", "expected"),
     [
-        ("https://example.com/team/", "https://example.com/team"),
-        ("https://example.com/team#staff", "https://example.com/team"),
+        ("https://example.com/team", "https://example.com/team/"),
+        ("https://example.com/team/", "https://example.com/team/"),
+        ("https://example.com/team#staff", "https://example.com/team/"),
         ("https://example.com/", "https://example.com/"),
-        ("https://example.com/p?id=1", "https://example.com/p?id=1"),
+        ("https://example.com/p?id=1", "https://example.com/p/?id=1"),
+        ("https://example.com/doc.pdf", "https://example.com/doc.pdf"),
     ],
 )
 def test_source_normalize_url(raw: str, expected: str) -> None:
-    """Drop trailing slash and fragment when canonicalizing a URL."""
+    """Enforce a trailing slash and drop the fragment when canonicalizing."""
     assert Source.normalize_url(raw) == expected
 
 
 def test_source_url_field_is_unique() -> None:
     """Expose URL as the unique identity of a source."""
     assert Source._meta.get_field("url").unique is True
-
-
-def test_source_indexes_are_declared() -> None:
-    """Declare indexes used by source lookup and filtering."""
-    indexes = {index.name: index for index in Source._meta.indexes}
-
-    assert indexes["source_page_type_created_idx"].fields == [
-        "page_type",
-        "created_timestamp",
-    ]
 
 
 def test_page_type_values() -> None:

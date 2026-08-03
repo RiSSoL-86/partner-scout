@@ -51,7 +51,7 @@ class ScanDetailController(Controller[PydanticSerializer]):
             scans_total=result["scans_total"],
             person_snapshots=result["person_snapshots"],
             total_sources_count=result["total_sources_count"],
-            person_source_counts=result["person_source_counts"],
+            person_mention_counts=result["person_mention_counts"],
         )
 
 

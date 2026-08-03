@@ -78,16 +78,16 @@ class CrawlEngine:
 
         async def walk() -> None:
             tasks: list[asyncio.Task[None]] = []
-            (
-                fetch_urls,
-                hidden_urls,
-            ) = await self.url_collector_service.execute()
-            candidates = self.url_scanner_service.execute(
-                crawler=crawler,
-                fetch_urls=fetch_urls,
-                hidden_urls=hidden_urls,
-            )
             try:
+                (
+                    fetch_urls,
+                    hidden_urls,
+                ) = await self.url_collector_service.execute()
+                candidates = self.url_scanner_service.execute(
+                    crawler=crawler,
+                    fetch_urls=fetch_urls,
+                    hidden_urls=hidden_urls,
+                )
                 async for candidate in candidates:
                     tasks.append(
                         asyncio.create_task(gate(candidate=candidate))

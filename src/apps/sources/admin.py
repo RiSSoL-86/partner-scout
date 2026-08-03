@@ -20,7 +20,6 @@ class PersonMentionInline(admin.TabularInline):  # type: ignore[type-arg]
         "role_title",
         "email",
         "phone",
-        "context",
     )
     max_num = 0
     model = PersonMention

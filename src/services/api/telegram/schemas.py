@@ -11,26 +11,30 @@ if TYPE_CHECKING:
 
 
 @final
-class SourceRefResponse(CamelCaseModel):
-    """One source mention shown under a collapsible sources block."""
+class PersonMentionResponse(CamelCaseModel):
+    """One person mention shown under a collapsible sources block."""
 
     title: str
     url: str
-    context: str
     mention_type: int
+    role_title: str
+    email: str
+    phone: str
     page_type: int
     published_at: datetime | None
 
     @classmethod
-    def build(cls, mention: PersonMention) -> Self:
-        """Assemble a source reference from a person mention instance."""
+    def build(cls, person_mention: PersonMention) -> Self:
+        """Assemble a mention reference from a person mention instance."""
         return cls(
-            title=mention.source.title,
-            url=mention.source.url,
-            context=mention.context,
-            mention_type=mention.mention_type,
-            page_type=mention.source.page_type,
-            published_at=mention.source.published_timestamp,
+            title=person_mention.source.title,
+            url=person_mention.source.url,
+            mention_type=person_mention.mention_type,
+            role_title=person_mention.role_title,
+            email=person_mention.email,
+            phone=person_mention.phone,
+            page_type=person_mention.source.page_type,
+            published_at=person_mention.source.published_timestamp,
         )
 
 
@@ -47,16 +51,19 @@ class CompanyResponse(CamelCaseModel):
 class ScanResponse(CamelCaseModel):
     """Scan shown in the report."""
 
-    status: int
+    scan_status: int
     pages_scanned: int
-    report: str
-    error: str
+    scan_report: str
+    scan_error: str
+    aggregation_status: int
+    aggregation_report: str
+    aggregation_error: str
     created_at: datetime
 
 
 @final
 class PersonSnapshotResponse(CamelCaseModel):
-    """One extracted person shown in the report with their sources."""
+    """One extracted person shown in the report with their mentions."""
 
     full_name: str
     role_title: str
@@ -68,16 +75,16 @@ class PersonSnapshotResponse(CamelCaseModel):
     confirmation_level: int
     email: str
     phone: str
-    sources: list[SourceRefResponse]
-    sources_count: int
+    person_mentions: list[PersonMentionResponse]
+    person_mentions_count: int
 
     @classmethod
     def build(
         cls,
         person_snapshot: PersonSnapshot,
-        sources: list[PersonMention],
+        person_mentions: list[PersonMention],
     ) -> Self:
-        """Assemble the response from a snapshot and its source mentions."""
+        """Assemble the response from a snapshot and its person mentions."""
         return cls(
             full_name=person_snapshot.person.normalized_name,
             role_title=person_snapshot.role_title,
@@ -89,8 +96,11 @@ class PersonSnapshotResponse(CamelCaseModel):
             confirmation_level=person_snapshot.confirmation_level,
             email=person_snapshot.email,
             phone=person_snapshot.phone,
-            sources=[SourceRefResponse.build(mention) for mention in sources],
-            sources_count=len(sources),
+            person_mentions=[
+                PersonMentionResponse.build(person_mention)
+                for person_mention in person_mentions
+            ],
+            person_mentions_count=len(person_mentions),
         )
 
 
@@ -107,7 +117,7 @@ class CompanyScanResponse(CamelCaseModel):
     partner_count: int
     director_count: int
     confirmed_count: int
-    sources_count: int
+    total_sources_count: int
     page: int
     total_pages: int
     has_prev: bool
@@ -122,12 +132,12 @@ class CompanyScanResponse(CamelCaseModel):
         scan_index: int,
         scans_total: int,
         person_snapshots: list[PersonSnapshot],
-        snapshot_sources: dict[UUID, list[PersonMention]],
+        mentions_by_person: dict[UUID, list[PersonMention]],
         persons_total: int,
         partner_count: int,
         director_count: int,
         confirmed_count: int,
-        sources_count: int,
+        total_sources_count: int,
         page: int,
         page_size: int,
     ) -> Self:
@@ -135,10 +145,13 @@ class CompanyScanResponse(CamelCaseModel):
         return cls(
             company=CompanyResponse.model_validate(scan.company),
             scan=ScanResponse(
-                status=scan.status,
+                scan_status=scan.scan_status,
                 pages_scanned=scan.pages_scanned,
-                report=scan.report,
-                error=scan.error,
+                scan_report=scan.scan_report,
+                scan_error=scan.scan_error,
+                aggregation_status=scan.aggregation_status,
+                aggregation_report=scan.aggregation_report,
+                aggregation_error=scan.aggregation_error,
                 created_at=scan.created_timestamp,
             ),
             scan_index=scan_index,
@@ -146,7 +159,7 @@ class CompanyScanResponse(CamelCaseModel):
             person_snapshots=[
                 PersonSnapshotResponse.build(
                     person_snapshot,
-                    snapshot_sources.get(person_snapshot.person_id, []),
+                    mentions_by_person.get(person_snapshot.person_id, []),
                 )
                 for person_snapshot in person_snapshots
             ],
@@ -154,14 +167,14 @@ class CompanyScanResponse(CamelCaseModel):
             partner_count=partner_count,
             director_count=director_count,
             confirmed_count=confirmed_count,
-            sources_count=sources_count,
+            total_sources_count=total_sources_count,
             **paginate(page, page_size, persons_total),
         )
 
 
 @final
 class PersonScanEntryResponse(CamelCaseModel):
-    """One scan a person appeared in, with that scan's sources."""
+    """One scan a person appeared in, with that scan's mentions."""
 
     scan_id: str
     company_name: str
@@ -176,16 +189,16 @@ class PersonScanEntryResponse(CamelCaseModel):
     practice_area: int
     email: str
     phone: str
-    sources: list[SourceRefResponse]
-    sources_count: int
+    person_mentions: list[PersonMentionResponse]
+    person_mentions_count: int
 
     @classmethod
     def build(
         cls,
         snapshot: PersonSnapshot,
-        sources: list[PersonMention],
+        person_mentions: list[PersonMention],
     ) -> Self:
-        """Assemble a scan entry from a snapshot and its source mentions."""
+        """Assemble a scan entry from a snapshot and its person mentions."""
         return cls(
             scan_id=str(snapshot.scan_id),
             company_name=snapshot.scan.company.name,
@@ -200,8 +213,11 @@ class PersonScanEntryResponse(CamelCaseModel):
             practice_area=snapshot.practice_area,
             email=snapshot.email,
             phone=snapshot.phone,
-            sources=[SourceRefResponse.build(mention) for mention in sources],
-            sources_count=len(sources),
+            person_mentions=[
+                PersonMentionResponse.build(person_mention)
+                for person_mention in person_mentions
+            ],
+            person_mentions_count=len(person_mentions),
         )
 
 
@@ -224,7 +240,7 @@ class PersonReportResponse(CamelCaseModel):
         cls,
         person: Person,
         snapshots: list[PersonSnapshot],
-        scan_sources: dict[UUID, list[PersonMention]],
+        mentions_by_scan: dict[UUID, list[PersonMention]],
         scans_total: int,
         page: int,
         page_size: int,
@@ -236,7 +252,7 @@ class PersonReportResponse(CamelCaseModel):
             items=[
                 PersonScanEntryResponse.build(
                     snapshot,
-                    scan_sources.get(snapshot.scan_id, []),
+                    mentions_by_scan.get(snapshot.scan_id, []),
                 )
                 for snapshot in snapshots
             ],

@@ -29,7 +29,7 @@ class Person(UUIDAbstractModel, TimestampedAbstractModel):
         _("identity key"),
         editable=False,
         default="",
-        max_length=201,
+        max_length=255,
     )
 
     class Meta:
@@ -47,7 +47,7 @@ class Person(UUIDAbstractModel, TimestampedAbstractModel):
         ]
         indexes = [
             models.Index(
-                fields=("normalized_name",),
+                Lower("normalized_name"),
                 name="person_normalized_idx",
             ),
             models.Index(
@@ -135,7 +135,7 @@ class PersonMention(UUIDAbstractModel, TimestampedAbstractModel):
     )
     role_title = models.CharField(
         verbose_name=_("role title"),
-        max_length=255,
+        max_length=512,
     )
     email = models.EmailField(verbose_name=_("email"), blank=True, default="")
     phone = models.CharField(
@@ -143,11 +143,6 @@ class PersonMention(UUIDAbstractModel, TimestampedAbstractModel):
         blank=True,
         default="",
         max_length=50,
-    )
-    context = models.TextField(
-        verbose_name=_("context"),
-        blank=True,
-        default="",
     )
 
     class Meta:

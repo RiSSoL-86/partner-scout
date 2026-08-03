@@ -8,11 +8,7 @@ CallbackHandler = Callable[..., Awaitable[Any]]
 
 
 def require_message(handler: CallbackHandler) -> CallbackHandler:
-    """Guard a callback query handler and inject its accessible message.
-
-    Answers and skips the handler when the attached message is missing or
-    inaccessible, so handlers receive a concrete ``Message`` to work with.
-    """
+    """Guard a callback handler and inject its accessible message."""
 
     @functools.wraps(handler)
     async def wrapper(callback_query: CallbackQuery, **kwargs: Any) -> Any:

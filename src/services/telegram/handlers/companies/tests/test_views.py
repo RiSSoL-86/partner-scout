@@ -42,7 +42,8 @@ def test_scan_message_renders_scan_details() -> None:
     """Render a company scan with its status and formatted date."""
     company = SimpleNamespace(name="Acme")
     scan = SimpleNamespace(
-        get_status_display=lambda: "Completed",
+        get_scan_status_display=lambda: "Completed",
+        get_aggregation_status_display=lambda: "Pending",
         created_timestamp=datetime(2026, 7, 25, 12, 30, 0),
     )
 
@@ -58,6 +59,7 @@ def test_scan_message_renders_scan_details() -> None:
     assert "Acme 📊:" in text
     assert "Scan 1/3 🔎" in text
     assert "Status: Completed" in text
+    assert "Aggregation: Pending" in text
     assert "2026-07-25 12:30:00" in text
 
 
@@ -65,7 +67,8 @@ def test_scan_message_handles_missing_timestamp() -> None:
     """Render a dash when the scan has no creation timestamp."""
     company = SimpleNamespace(name="Acme")
     scan = SimpleNamespace(
-        get_status_display=lambda: "Pending",
+        get_scan_status_display=lambda: "Pending",
+        get_aggregation_status_display=lambda: "Pending",
         created_timestamp=None,
     )
 

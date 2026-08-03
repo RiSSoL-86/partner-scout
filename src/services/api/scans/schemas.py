@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Self, final
 from uuid import UUID
 
 from apps.scans.choices import (
+    AggregationStatus,
     ConfirmationLevel,
     PositionType,
     PracticeArea,
@@ -27,10 +28,13 @@ class ScanResponse(CamelCaseModel):
     """Full scan payload shown in the scan detail."""
 
     id: UUID
-    status: int
+    scan_status: int
     pages_scanned: int
-    report: str
-    error: str
+    scan_report: str
+    scan_error: str
+    aggregation_status: int
+    aggregation_report: str
+    aggregation_error: str
     created_at: datetime
 
 
@@ -49,13 +53,13 @@ class PersonSnapshotResponse(CamelCaseModel):
     confirmation_level: int
     email: str
     phone: str
-    person_sources_count: int
+    person_mentions_count: int
 
     @classmethod
     def build(
         cls,
         person_snapshot: PersonSnapshot,
-        person_sources_count: int = 0,
+        person_mentions_count: int = 0,
     ) -> Self:
         """Assemble the response from a person snapshot instance."""
         return cls(
@@ -70,7 +74,7 @@ class PersonSnapshotResponse(CamelCaseModel):
             confirmation_level=person_snapshot.confirmation_level,
             email=person_snapshot.email,
             phone=person_snapshot.phone,
-            person_sources_count=person_sources_count,
+            person_mentions_count=person_mentions_count,
         )
 
 
@@ -96,17 +100,20 @@ class ScanDetailResponse(CamelCaseModel):
         scans_total: int,
         person_snapshots: list[PersonSnapshot],
         total_sources_count: int,
-        person_source_counts: dict[UUID, int],
+        person_mention_counts: dict[UUID, int],
     ) -> Self:
         """Assemble the detail payload from fetched scan data."""
         return cls(
             company=CompanyResponse.build(scan.company),
             scan=ScanResponse(
                 id=scan.id,
-                status=scan.status,
+                scan_status=scan.scan_status,
                 pages_scanned=scan.pages_scanned,
-                report=scan.report,
-                error=scan.error,
+                scan_report=scan.scan_report,
+                scan_error=scan.scan_error,
+                aggregation_status=scan.aggregation_status,
+                aggregation_report=scan.aggregation_report,
+                aggregation_error=scan.aggregation_error,
                 created_at=scan.created_timestamp,
             ),
             scan_index=scan_index,
@@ -114,7 +121,7 @@ class ScanDetailResponse(CamelCaseModel):
             person_snapshots=[
                 PersonSnapshotResponse.build(
                     person_snapshot,
-                    person_sources_count=person_source_counts.get(
+                    person_mentions_count=person_mention_counts.get(
                         person_snapshot.person_id,
                         0,
                     ),
@@ -158,7 +165,9 @@ class PersonMentionResponse(CamelCaseModel):
 
     id: UUID
     mention_type: int
-    context: str
+    role_title: str
+    email: str
+    phone: str
     source: SourceRefResponse
 
     @classmethod
@@ -168,7 +177,9 @@ class PersonMentionResponse(CamelCaseModel):
         return cls(
             id=person_mention.id,
             mention_type=person_mention.mention_type,
-            context=person_mention.context,
+            role_title=person_mention.role_title,
+            email=person_mention.email,
+            phone=person_mention.phone,
             source=SourceRefResponse(
                 id=source.id,
                 url=source.url,
@@ -186,8 +197,8 @@ class ScanPersonDetailResponse(CamelCaseModel):
     company: CompanyResponse
     scan: ScanResponse
     person_snapshot: PersonSnapshotResponse
-    mentions: list[PersonMentionResponse]
-    mentions_count: int
+    person_mentions: list[PersonMentionResponse]
+    person_mentions_count: int
 
     @classmethod
     def build(
@@ -201,21 +212,24 @@ class ScanPersonDetailResponse(CamelCaseModel):
             company=CompanyResponse.build(scan.company),
             scan=ScanResponse(
                 id=scan.id,
-                status=scan.status,
+                scan_status=scan.scan_status,
                 pages_scanned=scan.pages_scanned,
-                report=scan.report,
-                error=scan.error,
+                scan_report=scan.scan_report,
+                scan_error=scan.scan_error,
+                aggregation_status=scan.aggregation_status,
+                aggregation_report=scan.aggregation_report,
+                aggregation_error=scan.aggregation_error,
                 created_at=scan.created_timestamp,
             ),
             person_snapshot=PersonSnapshotResponse.build(
                 person_snapshot,
-                person_sources_count=len(person_mentions),
+                person_mentions_count=len(person_mentions),
             ),
-            mentions=[
+            person_mentions=[
                 PersonMentionResponse.build(person_mention)
                 for person_mention in person_mentions
             ],
-            mentions_count=len(person_mentions),
+            person_mentions_count=len(person_mentions),
         )
 
 
@@ -223,7 +237,8 @@ class ScanPersonDetailResponse(CamelCaseModel):
 class ScanChoices(CamelCaseModel):
     """Choice fields of the scan entity."""
 
-    status: list[ChoiceOption]
+    scan_status: list[ChoiceOption]
+    aggregation_status: list[ChoiceOption]
 
 
 @final
@@ -249,7 +264,8 @@ class ScanChoicesResponse(CamelCaseModel):
         """Assemble the scan-related choice values from the enums."""
         return cls(
             scan=ScanChoices(
-                status=build_choice_options(ScanStatus),
+                scan_status=build_choice_options(ScanStatus),
+                aggregation_status=build_choice_options(AggregationStatus),
             ),
             person_snapshot=PersonSnapshotChoices(
                 position_type=build_choice_options(PositionType),

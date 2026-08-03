@@ -42,7 +42,7 @@ def test_scan_choices_expose_scan_and_snapshot(client: Client) -> None:
 
     assert response.status_code == 200
     body = response.json()
-    statuses = body["scan"]["status"]
+    statuses = body["scan"]["scanStatus"]
     assert {option["value"] for option in statuses} == set(ScanStatus.values)
     positions = body["personSnapshot"]["positionType"]
     assert {option["value"] for option in positions} == set(
@@ -74,7 +74,7 @@ def test_scan_detail_returns_scan_with_snapshots(client: Client) -> None:
     assert len(body["personSnapshots"]) == 1
     assert body["personSnapshots"][0]["personId"] == str(person.id)
     assert body["personSnapshots"][0]["fullName"] == person.normalized_name
-    assert body["personSnapshots"][0]["personSourcesCount"] == 2
+    assert body["personSnapshots"][0]["personMentionsCount"] == 2
     assert body["totalSourcesCount"] == 0
 
 
@@ -94,7 +94,7 @@ def test_scan_person_detail_returns_scan_scoped_mentions(
     person = PersonFactory(first_name="Ivan", last_name="Ivanov")
     PersonSnapshotFactory(scan=scan, person=person)
 
-    mention = PersonMentionFactory(
+    person_mention = PersonMentionFactory(
         scan=scan,
         person=person,
         mention_type=MentionType.PROFILE,
@@ -108,12 +108,14 @@ def test_scan_person_detail_returns_scan_scoped_mentions(
     assert body["scan"]["id"] == str(scan.id)
     assert body["company"]["id"] == str(scan.company_id)
     assert body["personSnapshot"]["personId"] == str(person.id)
-    assert body["personSnapshot"]["personSourcesCount"] == 1
-    assert body["mentionsCount"] == 1
-    assert len(body["mentions"]) == 1
-    assert body["mentions"][0]["id"] == str(mention.id)
-    assert body["mentions"][0]["source"]["id"] == str(mention.source_id)
-    assert body["mentions"][0]["mentionType"] == MentionType.PROFILE
+    assert body["personSnapshot"]["personMentionsCount"] == 1
+    assert body["personMentionsCount"] == 1
+    assert len(body["personMentions"]) == 1
+    assert body["personMentions"][0]["id"] == str(person_mention.id)
+    assert body["personMentions"][0]["source"]["id"] == str(
+        person_mention.source_id
+    )
+    assert body["personMentions"][0]["mentionType"] == MentionType.PROFILE
 
 
 def test_scan_person_detail_returns_not_found_when_absent(

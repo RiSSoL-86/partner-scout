@@ -45,9 +45,8 @@ class ScanDetailService(BaseService):
         total_sources_count = await self.scan_source_repository.count(
             filters={"scan_id": scan.id},
         )
-        mention_repository = self.person_mention_repository
-        person_source_counts = (
-            await mention_repository.count_sources_by_person_for_scan(
+        person_mention_counts = (
+            await self.person_mention_repository.count_by_person_for_scan(
                 scan_id=scan.id,
             )
         )
@@ -57,5 +56,5 @@ class ScanDetailService(BaseService):
             "scans_total": scans_total,
             "person_snapshots": person_snapshots,
             "total_sources_count": total_sources_count,
-            "person_source_counts": person_source_counts,
+            "person_mention_counts": person_mention_counts,
         }

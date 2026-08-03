@@ -54,5 +54,6 @@ settings_include(
     "sentry.py",
     "open_ai.py",
     "scanner.py",
+    "aggregator.py",
     optional("local_settings.py"),
 )

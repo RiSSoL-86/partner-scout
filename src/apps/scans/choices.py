@@ -15,6 +15,16 @@ class ScanStatus(models.IntegerChoices):
 
 
 @final
+class AggregationStatus(models.IntegerChoices):
+    """List person-snapshot aggregation statuses for a scan."""
+
+    PENDING = 0, _("pending")
+    RUNNING = 1, _("running")
+    COMPLETED = 2, _("completed")
+    FAILED = 3, _("failed")
+
+
+@final
 class PositionType(models.IntegerChoices):
     """List recognized partner-level position types."""
 
@@ -27,10 +37,8 @@ class WorkStatus(models.IntegerChoices):
     """List employment states in client priority order."""
 
     UNKNOWN = 0, _("unknown")
-    FRONT_ACTIVE = 1, _("frontline active")
-    FRONT_INACTIVE = 2, _("frontline inactive")
-    BACK_OFFICE = 3, _("back office")
-    NOT_EMPLOYEE = 4, _("not employee")
+    FRONT_LINE = 1, _("front line")
+    BACK_OFFICE = 2, _("back office")
 
 
 @final

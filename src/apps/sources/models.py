@@ -13,7 +13,7 @@ class Source(UUIDAbstractModel, TimestampedAbstractModel):
     """Store one canonical source document, identified by its URL."""
 
     url = models.URLField(verbose_name=_("url"), unique=True)
-    title = models.CharField(verbose_name=_("title"), max_length=255)
+    title = models.CharField(verbose_name=_("title"), max_length=512)
     page_type = models.PositiveSmallIntegerField(
         verbose_name=_("page type"),
         choices=PageType.choices,
@@ -35,18 +35,17 @@ class Source(UUIDAbstractModel, TimestampedAbstractModel):
 
         verbose_name = _("source")
         verbose_name_plural = _("sources")
-        indexes = [
-            models.Index(
-                fields=("page_type", "created_timestamp"),
-                name="source_page_type_created_idx",
-            ),
-        ]
 
     @staticmethod
     def normalize_url(url: str) -> str:
-        """Return a canonical URL for dedup: no fragment, no trailing slash."""
+        """Return a canonical URL for dedup: no fragment, trailing slash."""
         parts = urlsplit(url.strip())
-        path = parts.path.rstrip("/") or "/"
+        path = parts.path
+        last_segment = path.rsplit("/", 1)[-1]
+        if (
+            "." not in last_segment
+        ):  # keep file paths (page.html, doc.pdf) as-is
+            path = path.rstrip("/") + "/"
         return urlunsplit((parts.scheme, parts.netloc, path, parts.query, ""))
 
     @override

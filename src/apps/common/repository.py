@@ -96,12 +96,7 @@ class BaseRepository[ModelT: models.Model, PrimaryKeyT]:
         filters: Mapping[str, object],
         instance: ModelT,
     ) -> ModelT:
-        """Return the row matching the filters or persist the given one.
-
-        A concurrent insert that trips a unique constraint is absorbed:
-        the method re-reads and returns the winning row instead of
-        raising. The prebuilt instance is discarded when a match exists.
-        """
+        """Return the existing row for the filters or create it, race-safe."""
         stored = await self.find_one(filters)
         if stored is not None:
             return stored

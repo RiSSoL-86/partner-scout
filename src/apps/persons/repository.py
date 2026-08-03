@@ -91,11 +91,11 @@ class PersonMentionRepository(BaseRepository[PersonMention, UUID]):
 
     model = PersonMention
 
-    async def count_sources_by_person_for_scan(
+    async def count_by_person_for_scan(
         self,
         scan_id: UUID,
     ) -> dict[UUID, int]:
-        """Return per-person source counts found within one scan."""
+        """Return per-person mention counts found within one scan."""
         rows = (
             self.model.objects.filter(scan_id=scan_id)
             .values("person_id")
@@ -108,7 +108,7 @@ class PersonMentionRepository(BaseRepository[PersonMention, UUID]):
         person_id: UUID,
         scan_ids: Sequence[UUID],
     ) -> dict[UUID, int]:
-        """Return per-scan source counts for one person across scans."""
+        """Return per-scan mention counts for one person across scans."""
         rows = (
             self.model.objects.filter(
                 person_id=person_id,
@@ -119,12 +119,27 @@ class PersonMentionRepository(BaseRepository[PersonMention, UUID]):
         )
         return {row["scan_id"]: row["total"] async for row in rows}
 
+    async def list_grouped_by_person_for_scan(
+        self,
+        scan_id: UUID,
+    ) -> dict[UUID, list[PersonMention]]:
+        """Group all of a scan's mentions by person, people prefetched."""
+        rows = (
+            self.model.objects.filter(scan_id=scan_id)
+            .select_related("person", "source")
+            .order_by("mention_type", "source__title")
+        )
+        grouped: dict[UUID, list[PersonMention]] = {}
+        async for mention in rows:
+            grouped.setdefault(mention.person_id, []).append(mention)
+        return grouped
+
     async def list_by_persons_for_scan(
         self,
         scan_id: UUID,
         person_ids: Sequence[UUID],
     ) -> dict[UUID, list[PersonMention]]:
-        """Group a scan's source mentions by person for the given people."""
+        """Group a scan's person mentions by person for the given people."""
         rows = (
             self.model.objects.filter(
                 scan_id=scan_id,
@@ -143,7 +158,7 @@ class PersonMentionRepository(BaseRepository[PersonMention, UUID]):
         person_id: UUID,
         scan_ids: Sequence[UUID],
     ) -> dict[UUID, list[PersonMention]]:
-        """Group a person's source mentions by scan across the given scans."""
+        """Group a person's mentions by scan across the given scans."""
         rows = (
             self.model.objects.filter(
                 person_id=person_id,

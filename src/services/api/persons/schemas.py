@@ -115,15 +115,15 @@ class TimelineEntryResponse(CamelCaseModel):
     confirmation_level: int
     email: str
     phone: str
-    person_sources_count: int
+    person_mentions_count: int
 
     @classmethod
     def build(
         cls,
         snapshot: PersonSnapshot,
-        person_sources_count: int,
+        person_mentions_count: int,
     ) -> Self:
-        """Assemble one entry from a snapshot and its scan source count."""
+        """Assemble one entry from a snapshot and its scan mention count."""
         scan = snapshot.scan
         company = scan.company
         return cls(
@@ -143,7 +143,7 @@ class TimelineEntryResponse(CamelCaseModel):
             confirmation_level=snapshot.confirmation_level,
             email=snapshot.email,
             phone=snapshot.phone,
-            person_sources_count=person_sources_count,
+            person_mentions_count=person_mentions_count,
         )
 
 
@@ -170,8 +170,8 @@ class PersonTimelineResponse(CamelCaseModel):
         return cls(
             person=PersonResponse.build(person),
             items=[
-                TimelineEntryResponse.build(snapshot, person_sources_count)
-                for snapshot, person_sources_count in entries
+                TimelineEntryResponse.build(snapshot, person_mentions_count)
+                for snapshot, person_mentions_count in entries
             ],
             total=total,
             offset=offset,

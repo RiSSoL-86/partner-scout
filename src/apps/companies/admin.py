@@ -13,10 +13,13 @@ class ScanInline(admin.TabularInline):  # type: ignore[type-arg]
     can_delete = False
     extra = 0
     fields = (
-        "status",
+        "scan_status",
         "pages_scanned",
-        "report",
-        "error",
+        "scan_report",
+        "scan_error",
+        "aggregation_status",
+        "aggregation_report",
+        "aggregation_error",
         "created_timestamp",
         "updated_timestamp",
     )

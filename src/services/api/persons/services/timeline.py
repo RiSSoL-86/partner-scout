@@ -13,11 +13,11 @@ type TimelineEntry = tuple["PersonSnapshot", int]
 
 @final
 class PersonTimelineService(BaseService):
-    """Load a page of a person's snapshots with their source counts."""
+    """Load a page of a person's snapshots with their mention counts."""
 
     person_repository = PersonRepository()
-    snapshot_repository = PersonSnapshotRepository()
-    mention_repository = PersonMentionRepository()
+    person_snapshot_repository = PersonSnapshotRepository()
+    person_mention_repository = PersonMentionRepository()
 
     @override
     async def execute(
@@ -31,7 +31,7 @@ class PersonTimelineService(BaseService):
         if person is None:
             return None
 
-        snapshots, total = await self.snapshot_repository.list(
+        snapshots, total = await self.person_snapshot_repository.list(
             filters={"person_id": person_id},
             select_related=("scan", "scan__company"),
             order_by=("-scan__created_timestamp",),
@@ -39,12 +39,14 @@ class PersonTimelineService(BaseService):
             limit=limit,
         )
 
-        source_counts = await self.mention_repository.count_by_scan_for_person(
-            person_id=person_id,
-            scan_ids=[snapshot.scan_id for snapshot in snapshots],
+        mention_counts = (
+            await self.person_mention_repository.count_by_scan_for_person(
+                person_id=person_id,
+                scan_ids=[snapshot.scan_id for snapshot in snapshots],
+            )
         )
         entries: list[TimelineEntry] = [
-            (snapshot, source_counts.get(snapshot.scan_id, 0))
+            (snapshot, mention_counts.get(snapshot.scan_id, 0))
             for snapshot in snapshots
         ]
         return {

@@ -6,7 +6,7 @@ from celery import shared_task
 from services.scanner.services import CollectSourceService, PlanScanService
 
 # Stagger scan starts so heavy crawls do not all run at once.
-SCAN_STAGGER_SECONDS = 15 * 60
+SCAN_STAGGER_SECONDS = 20 * 60
 
 
 @shared_task(name="scans.collect_sources")

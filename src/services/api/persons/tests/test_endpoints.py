@@ -152,12 +152,12 @@ def test_person_timeline_counts_sources_per_scan(client: Client) -> None:
 
     assert response.status_code == 200
     entry = response.json()["items"][0]
-    assert entry["personSourcesCount"] == 2
+    assert entry["personMentionsCount"] == 2
     assert "sources" not in entry
 
 
 def test_person_timeline_counts_zero_without_mentions(client: Client) -> None:
-    """Show a snapshot with no mentions as a zero source count."""
+    """Show a snapshot with no mentions as a zero mention count."""
     person = PersonFactory(first_name="John", last_name="Doe")
     PersonSnapshotFactory(person=person, scan=ScanFactory())
 
@@ -166,7 +166,7 @@ def test_person_timeline_counts_zero_without_mentions(client: Client) -> None:
     assert response.status_code == 200
     body = response.json()
     assert body["total"] == 1
-    assert body["items"][0]["personSourcesCount"] == 0
+    assert body["items"][0]["personMentionsCount"] == 0
 
 
 def test_person_timeline_paginates(client: Client) -> None:

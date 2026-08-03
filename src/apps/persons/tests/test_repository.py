@@ -77,7 +77,7 @@ async def test_count_by_person_id_counts_only_target_person() -> None:
 
 
 async def test_count_by_scan_for_person_groups_by_scan() -> None:
-    """Group a person's source counts per scan, ignoring other people."""
+    """Group a person's mention counts per scan, ignoring other people."""
     person = await create_person()
     first_scan = await create_scan()
     second_scan = await create_scan()
@@ -105,6 +105,56 @@ async def test_count_by_scan_for_person_empty_scan_ids() -> None:
     )
 
     assert counts == {}
+
+
+async def test_count_by_person_for_scan_groups_by_person() -> None:
+    """Group a scan's mention counts per person, ignoring other scans."""
+    scan = await create_scan()
+    first = await create_person()
+    second = await create_person()
+    await create_mention(scan=scan, person=first)
+    await create_mention(scan=scan, person=first)
+    await create_mention(scan=scan, person=second)
+    await create_mention(scan=await create_scan(), person=first)
+
+    counts = await PersonMentionRepository().count_by_person_for_scan(
+        scan_id=scan.id,
+    )
+
+    assert counts == {first.id: 2, second.id: 1}
+
+
+async def test_list_grouped_by_person_for_scan_groups_and_prefetches() -> None:
+    """Group a scan's mentions by person with people and sources joined."""
+    scan = await create_scan()
+    first = await create_person()
+    second = await create_person()
+    await create_mention(scan=scan, person=first)
+    await create_mention(scan=scan, person=first)
+    await create_mention(scan=scan, person=second)
+
+    grouped = await PersonMentionRepository().list_grouped_by_person_for_scan(
+        scan_id=scan.id,
+    )
+
+    assert set(grouped) == {first.id, second.id}
+    assert len(grouped[first.id]) == 2
+    # person and source are prefetched: touching them hits no extra query.
+    assert grouped[first.id][0].person.id == first.id
+    assert grouped[second.id][0].source is not None
+
+
+async def test_list_grouped_by_person_for_scan_empty_without_mentions() -> (
+    None
+):
+    """Return an empty mapping when the scan mentioned no one."""
+    scan = await create_scan()
+
+    grouped = await PersonMentionRepository().list_grouped_by_person_for_scan(
+        scan_id=scan.id,
+    )
+
+    assert grouped == {}
 
 
 async def test_list_by_surname_initial_filters_and_paginates() -> None:

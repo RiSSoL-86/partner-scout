@@ -11,12 +11,13 @@ A person qualifies ONLY if ALL hold:
   Partner, Managing Partner, Director — any variation). Skip lower ranks
   (менеджер, консультант, советник, аналитик, специалист, associate,
   counsel), however senior they sound.
-- Affiliation: the person must be employed by "{company}" itself. Whenever
-  the title or surrounding text names an organization other than
-  "{company}", they belong to that organization — reject them, even though
-  they appear on this page. Keep a person only when their tie to
-  "{company}" is explicit; if you cannot tell which firm employs them, skip
-  them.
+- Affiliation: this page is on "{company}"'s own site, so a person presented
+  here as its partner or director is employed by "{company}" by default — do
+  NOT drop someone merely because the page omits an explicit "works at
+  {company}" label. Reject a person ONLY when the title or surrounding text
+  explicitly ties them to a DIFFERENT organization (a client, a partner
+  firm, a regulator, a former employer); then they belong to that
+  organization, even though they appear on this page.
 - Full name: both a first name AND a last name are printed on the page.
   A bare given name mentioned in running text does NOT qualify; never
   invent or leave the surname empty — if it is missing, skip them.
@@ -34,14 +35,25 @@ Classify `page_type` by the page's PRIMARY purpose (choose one code):
 - 6 document — a downloadable file wrapper (PDF, presentation, brochure).
 - 7 other — none of the above fits.
 Prefer the main purpose: a partner quoted in news is 4, not 0; an article
-written by a partner is 2, not 0.
+written by a partner is 2, not 0. Always classify `page_type`, even when no
+person qualifies.
 
-For every qualifying person return: first/middle (may be empty)/last name;
-`role_title` (job title copied verbatim); `mention_type` (0 personal profile,
-1 organizational-unit listing, 2 otherwise); `email` and `phone` (work
-contacts printed on the page, empty when absent — never guess); `context`
-(one short quote justifying the person). Names may be in Russian. Extract
-nothing when no one qualifies.
+For every qualifying person return:
+- first/middle (may be empty)/last name;
+- `role_title` — the job title copied verbatim, kept complete with any
+  practice, department or specialization named in it (do not shorten or
+  translate); this title is what later classifies the person;
+- `mention_type`: how THIS person is presented on the page — judge it per
+  person, not per page (this reflects how strongly the page establishes them):
+    - 0 personal profile — the page centres on this individual: a dedicated
+      bio, CV, or contact card about them (usually a `page_type` 0 profile).
+    - 1 organizational-unit listing — the person appears as one entry in a
+      roster of people: a team, partners, leadership or department list
+      (usually a `page_type` 1 team).
+    - 2 otherwise — any weaker mention: quoted in an article, credited as an
+      author, or named incidentally in running text.
+- `email` and `phone` (work contacts printed on the page, empty when absent —
+never guess). Names may be in Russian. Extract nothing when no one qualifies.
 """.strip()
 
 

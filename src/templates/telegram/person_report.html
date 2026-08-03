@@ -432,12 +432,12 @@
                                 {% endif %}
                             </div>
                         {% endif %}
-                        {% if entry.sources_count %}
+                        {% if entry.person_mentions_count %}
                             <details class="sources">
                                 <summary>
-                                    Источники: {{ entry.sources_count }}
+                                    Источники: {{ entry.person_mentions_count }}
                                 </summary>
-                                {% for source in entry.sources %}
+                                {% for source in entry.person_mentions %}
                                     {% include "telegram/_source_card.html" %}
                                 {% endfor %}
                             </details>

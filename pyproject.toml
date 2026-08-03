@@ -68,6 +68,7 @@ ignore = [
 "src/django_project/settings/*.py" = ["F821"]
 "src/services/api/*/controllers.py" = ["TC001", "TC002"]
 "src/services/scanner/**/schemas.py" = ["TC001"]
+"src/services/aggregator/**/schemas.py" = ["TC001"]
 
 [tool.ruff.format]
 quote-style = "double"

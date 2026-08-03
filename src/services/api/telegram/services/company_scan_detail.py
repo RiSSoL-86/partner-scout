@@ -18,7 +18,7 @@ class CompanyScanDetailService(BaseService):
     scan_repository = ScanRepository()
     person_snapshot_repository = PersonSnapshotRepository()
     scan_source_repository = ScanSourceRepository()
-    mention_repository = PersonMentionRepository()
+    person_mention_repository = PersonMentionRepository()
 
     @override
     async def execute(
@@ -70,11 +70,11 @@ class CompanyScanDetailService(BaseService):
                 "confirmation_level": ConfirmationLevel.CONFIRMED,
             },
         )
-        sources_count = await self.scan_source_repository.count(
+        total_sources_count = await self.scan_source_repository.count(
             filters={"scan_id": scan.id},
         )
-        snapshot_sources = (
-            await self.mention_repository.list_by_persons_for_scan(
+        mentions_by_person = (
+            await self.person_mention_repository.list_by_persons_for_scan(
                 scan_id=scan.id,
                 person_ids=[
                     snapshot.person_id for snapshot in person_snapshots
@@ -87,9 +87,9 @@ class CompanyScanDetailService(BaseService):
             "scans_total": scans_total,
             "person_snapshots": person_snapshots,
             "persons_total": persons_total,
-            "snapshot_sources": snapshot_sources,
+            "mentions_by_person": mentions_by_person,
             "partner_count": partner_count,
             "director_count": director_count,
             "confirmed_count": confirmed_count,
-            "sources_count": sources_count,
+            "total_sources_count": total_sources_count,
         }

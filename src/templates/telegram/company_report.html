@@ -146,6 +146,17 @@
 
         .info dd { margin: 0; font-weight: 500; }
 
+        .status-line {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-line .label {
+            font-size: 12px;
+            color: var(--hint);
+        }
+
         .info dd a { color: var(--link); text-decoration: none; }
 
         .badge {
@@ -489,20 +500,6 @@
             <h2>Информация о скане</h2>
             <dl class="info-grid info">
                 <div>
-                    <dt>Статус</dt>
-                    <dd>
-                        {% if report.scan.status == 2 %}
-                            <span class="badge green">Завершён</span>
-                        {% elif report.scan.status == 3 %}
-                            <span class="badge red">Ошибка</span>
-                        {% elif report.scan.status == 1 %}
-                            <span class="badge amber">Выполняется</span>
-                        {% else %}
-                            <span class="badge gray">В очереди</span>
-                        {% endif %}
-                    </dd>
-                </div>
-                <div>
                     <dt>Просканировано страниц</dt>
                     <dd>{{ report.scan.pages_scanned }}</dd>
                 </div>
@@ -512,25 +509,65 @@
                 </div>
                 <div>
                     <dt>Источников с людьми</dt>
-                    <dd>{{ report.sources_count }}</dd>
+                    <dd>{{ report.total_sources_count }}</dd>
                 </div>
             </dl>
+        </section>
 
-            {% if report.scan.report %}
+        <section class="card">
+            <h2>Отчёт о сканировании</h2>
+            <div class="status-line">
+                <span class="label">Статус</span>
+                {% if report.scan.scan_status == 2 %}
+                    <span class="badge green">Завершён</span>
+                {% elif report.scan.scan_status == 3 %}
+                    <span class="badge red">Ошибка</span>
+                {% elif report.scan.scan_status == 1 %}
+                    <span class="badge amber">Выполняется</span>
+                {% else %}
+                    <span class="badge gray">В очереди</span>
+                {% endif %}
+            </div>
+            {% if report.scan.scan_report %}
                 <div style="margin-top:14px">
-                    <dt style="font-size:12px;color:var(--hint);margin-bottom:6px">
-                        Отчёт
-                    </dt>
-                    <div class="report-text">{{ report.scan.report }}</div>
+                    <div class="report-text">Упоминаний о людях: {{ report.scan.scan_report|cut:"Mentions of persons: "|cut:"." }}</div>
                 </div>
             {% endif %}
-            {% if report.scan.error %}
+            {% if report.scan.scan_error %}
                 <div style="margin-top:14px">
                     <dt style="font-size:12px;color:var(--hint);margin-bottom:6px">
-                        Ошибка
+                        Ошибка сканирования
                     </dt>
-                    <div class="report-text" style="color:#d43b30">
-                        {{ report.scan.error }}</div>
+                    <div class="report-text" style="color:#d43b30">{{ report.scan.scan_error }}</div>
+                </div>
+            {% endif %}
+        </section>
+
+        <section class="card">
+            <h2>Отчёт об агрегации</h2>
+            <div class="status-line">
+                <span class="label">Статус</span>
+                {% if report.scan.aggregation_status == 2 %}
+                    <span class="badge green">Завершён</span>
+                {% elif report.scan.aggregation_status == 3 %}
+                    <span class="badge red">Ошибка</span>
+                {% elif report.scan.aggregation_status == 1 %}
+                    <span class="badge amber">Выполняется</span>
+                {% else %}
+                    <span class="badge gray">В очереди</span>
+                {% endif %}
+            </div>
+            {% if report.scan.aggregation_report %}
+                <div style="margin-top:14px">
+                    <div class="report-text">Создано снимков людей: {{ report.scan.aggregation_report|cut:"Snapshots of person created: "|cut:"." }}</div>
+                </div>
+            {% endif %}
+            {% if report.scan.aggregation_error %}
+                <div style="margin-top:14px">
+                    <dt style="font-size:12px;color:var(--hint);margin-bottom:6px">
+                        Ошибка агрегации
+                    </dt>
+                    <div class="report-text" style="color:#d43b30">{{ report.scan.aggregation_error }}</div>
                 </div>
             {% endif %}
         </section>
@@ -569,12 +606,12 @@
                                     {% endif %}
                                 </div>
                             {% endif %}
-                            {% if snapshot.sources_count %}
+                            {% if snapshot.person_mentions_count %}
                                 <details class="sources">
                                     <summary>
-                                        Источники: {{ snapshot.sources_count }}
+                                        Источники: {{ snapshot.person_mentions_count }}
                                     </summary>
-                                    {% for source in snapshot.sources %}
+                                    {% for source in snapshot.person_mentions %}
                                         {% include "telegram/_source_card.html" %}
                                     {% endfor %}
                                 </details>

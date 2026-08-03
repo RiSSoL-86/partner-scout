@@ -17,7 +17,7 @@ class ScanFactory(DjangoModelFactory[Scan]):
         skip_postgeneration_save = True
 
     company = factory.SubFactory(CompanyFactory)
-    status = ScanStatus.COMPLETED
+    scan_status = ScanStatus.COMPLETED
     pages_scanned = 0
 
     @factory.post_generation
