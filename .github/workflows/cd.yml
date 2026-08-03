@@ -18,9 +18,19 @@ jobs:
           port: 22
           script: |
             set -e
+            mkdir -p ~/partner-scout
             cd ~/partner-scout
+            if [ ! -d .git ]; then
+              git init
+              git remote add origin https://github.com/RiSSoL-86/partner-scout.git
+            fi
             git fetch --all
             git reset --hard origin/main
+
+            if [ ! -f compose.yml ]; then
+              echo "::error::compose.yml is missing in ~/partner-scout — place it manually first"
+              exit 1
+            fi
             docker compose build
             docker compose up -d
             docker image prune -f
