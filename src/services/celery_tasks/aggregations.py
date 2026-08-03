@@ -9,7 +9,7 @@ from services.aggregator.services import (
 )
 
 # Stagger aggregations so LLM calls do not all fire at once.
-AGGREGATION_STAGGER_SECONDS = 15 * 60
+AGGREGATION_STAGGER_SECONDS = 5 * 60
 
 
 @shared_task(name="aggregations.aggregate_persons")

@@ -57,11 +57,7 @@ class ClassifierPersonService(BaseService):
         scan_person_mentions: ScanPersonMentions,
         batch_size: int,
     ) -> Iterator[list[AiPersonInput]]:
-        """Yield the per-person LLM payload in batches of ``batch_size``.
-
-        Streaming keeps each LLM request small so a scan with many people
-        cannot exceed the model's context limit in a single call.
-        """
+        """Yield the per-person LLM payload in batches of ``batch_size``."""
         batch: list[AiPersonInput] = []
         mentions_by_person = scan_person_mentions.mentions_by_person
         for person_id, mentions in mentions_by_person.items():

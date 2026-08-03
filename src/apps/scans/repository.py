@@ -1,15 +1,19 @@
 from typing import TYPE_CHECKING, final
 from uuid import UUID
 
+from asgiref.sync import sync_to_async
+from django.db import transaction
 from django.db.models import F
+from django.utils import timezone
 
 from apps.common.repository import BaseRepository
+from apps.scans.choices import AggregationStatus
 from apps.scans.models import PersonSnapshot, Scan, ScanSource
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from apps.scans.choices import AggregationStatus, ScanStatus
+    from apps.scans.choices import ScanStatus
 
 
 @final
@@ -59,6 +63,17 @@ class ScanRepository(BaseRepository[Scan, UUID]):
             ),
         )
         return scan
+
+    async def claim_for_aggregation(self, scan_id: UUID) -> bool:
+        """Atomically move a pending scan to running; True when claimed."""
+        claimed = await self.model.objects.filter(
+            id=scan_id,
+            aggregation_status=AggregationStatus.PENDING,
+        ).aupdate(
+            aggregation_status=AggregationStatus.RUNNING,
+            updated_timestamp=timezone.now(),
+        )
+        return claimed == 1
 
     @staticmethod
     async def increment_pages_scanned(scan: Scan) -> Scan:
@@ -132,9 +147,14 @@ class PersonSnapshotRepository(BaseRepository[PersonSnapshot, UUID]):
         scan_id: UUID,
         person_snapshots: Sequence[PersonSnapshot],
     ) -> int:
-        """Swap a scan's snapshots for a freshly aggregated set."""
-        await self.model.objects.filter(scan_id=scan_id).adelete()
-        if not person_snapshots:
-            return 0
-        created = await self.model.objects.abulk_create(objs=person_snapshots)
-        return len(created)
+        """Atomically swap a scan's snapshots for a freshly aggregated set."""
+        snapshots = list(person_snapshots)
+
+        @transaction.atomic
+        def swap() -> int:
+            self.model.objects.filter(scan_id=scan_id).delete()
+            if not snapshots:
+                return 0
+            return len(self.model.objects.bulk_create(objs=snapshots))
+
+        return await sync_to_async(swap)()

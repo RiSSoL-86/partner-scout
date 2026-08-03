@@ -119,6 +119,21 @@ class PersonMentionRepository(BaseRepository[PersonMention, UUID]):
         )
         return {row["scan_id"]: row["total"] async for row in rows}
 
+    async def list_grouped_by_person_for_scan(
+        self,
+        scan_id: UUID,
+    ) -> dict[UUID, list[PersonMention]]:
+        """Group all of a scan's mentions by person, people prefetched."""
+        rows = (
+            self.model.objects.filter(scan_id=scan_id)
+            .select_related("person", "source")
+            .order_by("mention_type", "source__title")
+        )
+        grouped: dict[UUID, list[PersonMention]] = {}
+        async for mention in rows:
+            grouped.setdefault(mention.person_id, []).append(mention)
+        return grouped
+
     async def list_by_persons_for_scan(
         self,
         scan_id: UUID,

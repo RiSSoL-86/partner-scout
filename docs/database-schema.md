@@ -11,7 +11,7 @@ exact columns.
 
 - `companies` owns monitored companies.
 - `scans` owns scan runs and facts extracted during a scan.
-- `sources` owns canonical source documents, deduplicated by content hash.
+- `sources` owns canonical source documents, deduplicated by normalized URL.
 - `persons` owns canonical people and their source mentions.
 
 `PersonSnapshot` belongs in `scans` because it is not a permanent person
@@ -47,7 +47,7 @@ and the person snapshots extracted from those sources.
 
 A canonical source document discovered by scans.
 
-`Source` is independent from `Scan`. If the same content is found in multiple
+`Source` is independent from `Scan`. If the same URL is found in multiple
 weekly scans, the same source row is reused and linked to each scan through
 `ScanSource`.
 
@@ -93,8 +93,8 @@ Expected write flow for a weekly scan:
 
 1. Create a scan for the company.
 2. Fetch and parse company pages.
-3. For each parsed page, compute a content hash.
-4. Get or create a canonical source by content hash.
+3. For each parsed page, normalize its URL.
+4. Get or create a canonical source by normalized URL.
 5. Link the source to the scan through `ScanSource`.
 6. Extract people from each source.
 7. Get or create canonical people by normalized name.

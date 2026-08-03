@@ -66,11 +66,15 @@ class AggregatePersonsService(BaseService):
             )
             return scan
 
-        logger.info(msg=f"Aggregating scan {scan_id} ({scan.company.name})")
-        await self.scan_repository.set_aggregation_status(
-            scan=scan, aggregation_status=AggregationStatus.RUNNING
-        )
+        if not await self.scan_repository.claim_for_aggregation(
+            scan_id=scan_id
+        ):
+            logger.info(
+                msg=f"Scan {scan_id} already claimed for aggregation; skipping"
+            )
+            return scan
 
+        logger.info(msg=f"Aggregating scan {scan_id} ({scan.company.name})")
         try:
             written = await self._aggregate(scan)
         except Exception as error:
