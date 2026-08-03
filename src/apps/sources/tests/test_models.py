@@ -49,14 +49,16 @@ def test_source_url_is_unique() -> None:
 @pytest.mark.parametrize(
     ("raw", "expected"),
     [
-        ("https://example.com/team/", "https://example.com/team"),
-        ("https://example.com/team#staff", "https://example.com/team"),
+        ("https://example.com/team", "https://example.com/team/"),
+        ("https://example.com/team/", "https://example.com/team/"),
+        ("https://example.com/team#staff", "https://example.com/team/"),
         ("https://example.com/", "https://example.com/"),
-        ("https://example.com/p?id=1", "https://example.com/p?id=1"),
+        ("https://example.com/p?id=1", "https://example.com/p/?id=1"),
+        ("https://example.com/doc.pdf", "https://example.com/doc.pdf"),
     ],
 )
 def test_source_normalize_url(raw: str, expected: str) -> None:
-    """Drop trailing slash and fragment when canonicalizing a URL."""
+    """Enforce a trailing slash and drop the fragment when canonicalizing."""
     assert Source.normalize_url(raw) == expected
 
 

@@ -38,9 +38,14 @@ class Source(UUIDAbstractModel, TimestampedAbstractModel):
 
     @staticmethod
     def normalize_url(url: str) -> str:
-        """Return a canonical URL for dedup: no fragment, no trailing slash."""
+        """Return a canonical URL for dedup: no fragment, trailing slash."""
         parts = urlsplit(url.strip())
-        path = parts.path.rstrip("/") or "/"
+        path = parts.path
+        last_segment = path.rsplit("/", 1)[-1]
+        if (
+            "." not in last_segment
+        ):  # keep file paths (page.html, doc.pdf) as-is
+            path = path.rstrip("/") + "/"
         return urlunsplit((parts.scheme, parts.netloc, path, parts.query, ""))
 
     @override
