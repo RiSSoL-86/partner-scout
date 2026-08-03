@@ -33,7 +33,10 @@ jobs:
             fi
             docker compose build
             docker compose up -d
+
+            # Drop dangling images and cap the build cache at ~2GB.
             docker image prune -f
+            docker builder prune -f --keep-storage 2GB
 
             # Give containers a moment to pass their healthchecks, then report.
             sleep 15
